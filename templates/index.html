@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Meu Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:#f6f7f9}
+    .wrap{max-width:720px;margin:32px auto;padding:16px}
+    .card{background:#fff;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.08);overflow:hidden}
+    .msgs{height:60vh;overflow:auto;padding:16px}
+    .msg{margin:12px 0;padding:12px 14px;border-radius:12px;max-width:85%;white-space:pre-wrap}
+    .user{background:#e7f0ff;margin-left:auto}
+    .bot{background:#f1f1f1;margin-right:auto}
+    form{display:flex;gap:8px;padding:12px;border-top:1px solid #eee;background:#fff}
+    input,button{font-size:16px}
+    input{flex:1;padding:12px;border:1px solid #ddd;border-radius:10px;outline:none}
+    button{padding:12px 16px;border:0;border-radius:10px;background:#0b5cff;color:#fff;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div id="msgs" class="msgs"></div>
+      <form id="form">
+        <input id="inp" placeholder="Digite sua mensagem..." autocomplete="off" />
+        <button id="send" type="submit">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const msgsEl = document.getElementById('msgs');
+    const inp = document.getElementById('inp');
+    const form = document.getElementById('form');
+
+    function addMsg(text, who){
+      const div = document.createElement('div');
+      div.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
+      div.textContent = text;
+      msgsEl.appendChild(div);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    // opcional: mensagem inicial
+    addMsg('Oi! Pode me enviar uma pergunta 👋', 'bot');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = inp.value.trim();
+      if(!text) return;
+      addMsg(text, 'user');
+      inp.value = '';
+      form.querySelector('button').disabled = true;
+
+      try{
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // backend espera { msg: "..." }
+          body: JSON.stringify({ msg: text })
+        });
+        // backend retorna { reply: "..." }
+        const data = await r.json();
+        const reply = data && data.reply ? data.reply : '(sem resposta)';
+        addMsg(reply, 'bot');
+      } catch(err){
+        console.error(err);
+        addMsg('Erro ao falar com o servidor 😞', 'bot');
+      } finally {
+        form.querySelector('button').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

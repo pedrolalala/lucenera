@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Flask (start_lucenera)",
+      "type": "shell",
+      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\Activate.ps1\"; & \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" \"${workspaceFolder}\\start_lucenera.py\"",
+      "presentation": {
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Run cloudflared tunnel (foreground)",
+      "type": "shell",
+      "command": "cloudflared tunnel run lucenera --config \"${workspaceFolder}\\.cloudflared\\config.yml\"",
+      "presentation": {
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    }
+  ],
+  "inputs": []
+}

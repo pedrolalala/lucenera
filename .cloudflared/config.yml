@@ -1,0 +1,17 @@
+## Cloudflared config template for the lucenera tunnel
+## Replace <TUNNEL-UUID> and <USER> with the values from `cloudflared tunnel create` and your Windows username.
+## Save this file as `.cloudflared/config.yml` in the repository or in %USERPROFILE%\.cloudflared\config.yml
+
+tunnel: 25ea7377-a23d-4f4f-a350-621b5bc90cfb
+credentials-file: C:/Users/pedro/.cloudflared/25ea7377-a23d-4f4f-a350-621b5bc90cfb.json
+
+ingress:
+  - hostname: apilucenera.site
+    service: http://127.0.0.1:5000
+  - service: http_status:404
+
+# Notes:
+# - After running `cloudflared tunnel create lucenera` you'll get the TUNNEL-UUID and a credentials file
+#   will be written to %USERPROFILE%\.cloudflared\<TUNNEL-UUID>.json. Update the two placeholders above.
+# - If you prefer a subdomain, change `hostname` to e.g. `api.apilucenera.site`.
+# - You can pass `--config` to `cloudflared tunnel run` to point to this file.

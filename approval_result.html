@@ -1,0 +1,4159 @@
+﻿<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Painel - Mensagens WhatsApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <style>
+    body{font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:24px;}
+    table{border-collapse: collapse; width:100%;}
+    th,td{border:1px solid #ddd; padding:8px; vertical-align: top;}
+    th{background:#f2f2f2;}
+    .tag{display:inline-block; padding:2px 6px; border-radius:6px; font-size:12px; background:#eee; margin-right:6px;}
+    .ok{background:#d1fae5}
+    .warn{background:#fee2e2}
+    .btn{padding:6px 10px; border-radius:6px; border:1px solid #ccc; text-decoration:none; margin-right:4px; display:inline-block}
+    .btn:hover{background:#fafafa}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;}
+    .nowrap{white-space:nowrap}
+    .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px}
+    .muted{color:#555; font-size:12px}
+  </style>
+</head>
+<body>
+  <h2>Painel de Mensagens</h2>
+
+  <form method="get" action="/admin" class="toolbar">
+    <label>Status:
+      <select name="status">
+        <option value="">(todos)</option>
+        
+        <option value="received" >received</option>
+        
+        <option value="suggested" >suggested</option>
+        
+        <option value="awaiting_approval" >awaiting_approval</option>
+        
+        <option value="approved" >approved</option>
+        
+        <option value="sent" >sent</option>
+        
+        <option value="rejected" >rejected</option>
+        
+        <option value="error" >error</option>
+        
+      </select>
+    </label>
+    <label>Busca (tel/nome/texto):
+      <input type="text" name="q" value="" />
+    </label>
+    <label>Ordenar por:
+      <select name="order">
+        <option value="id"   >id (mais recentes primeiro)</option>
+        <option value="data" >data</option>
+      </select>
+    </label>
+    <label>Limite:
+      <select name="limit">
+        
+        <option value="50" >50</option>
+        
+        <option value="100" selected>100</option>
+        
+        <option value="200" >200</option>
+        
+        <option value="300" >300</option>
+        
+      </select>
+    </label>
+    <label>Auto-refresh (s):
+      <input type="number" name="refresh" min="0" step="1" value="0" style="width:70px">
+    </label>
+    <input type="hidden" name="before" value="">
+    <button class="btn" type="submit">Aplicar</button>
+
+    <a class="btn" href="/admin?status=&amp;q=&amp;order=id_num&amp;limit=100&amp;refresh=0">Atualizar</a>
+    
+    
+      <a class="btn" href="/admin?status=&amp;q=&amp;order=id_num&amp;limit=100&amp;refresh=0&amp;before=17043">Mais antigas →</a>
+    
+    <span class="muted">Mostrando 100 registros (ordenado por id_num)</span>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="nowrap">data</th>
+        <th>telefone</th>
+        <th>nome</th>
+        <th>grupo</th>
+        <th>mensagem</th>
+        <th>ai_draft</th>
+        <th>final_out</th>
+        <th>status</th>
+        <th>aprovado?</th>
+        <th>ações</th>
+      </tr>
+    </thead>
+    <tbody>
+    
+      <tr>
+        <td class="nowrap">None</td>
+        <td>+5516997000842</td>
+        <td class="mono"></td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">SENT</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17142">
+    <input type="hidden" name="telefone" value="+5516997000842">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17142">
+    <input type="hidden" name="telefone" value="+5516997000842">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:20:21.779044+00:00</td>
+        <td>5516991655013</td>
+        <td class="mono">Daniel</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Tudo bem?</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17141">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Tudo bem?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17141">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:20:15.148258+00:00</td>
+        <td>5516991655013</td>
+        <td class="mono">Daniel</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Boa tarde</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17140">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Boa tarde">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17140">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:19:33.694537+00:00</td>
+        <td>5516997733040</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F3FFD088BC9495433DA/I-t3jrKKkU_R6EDAct2hxQ==.pdf]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17139">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F3FFD088BC9495433DA/I-t3jrKKkU_R6EDAct2hxQ==.pdf]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17139">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:19:01.718146+00:00</td>
+        <td>5516991655013</td>
+        <td class="mono">Daniel</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Boa tarde, o orçamento não está correto</td>
+        <td class="mono">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Entendi. Pode me informar qual parte do orçamento não está correta para que eu possa verificar e resolver?</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17138">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Entendi. Pode me informar qual parte do orçamento não está correta para que eu possa verificar e resolver?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17138">
+    <input type="hidden" name="telefone" value="5516991655013">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Entendi. Pode me informar qual parte do orçamento não está correta para que eu possa verificar e resolver?</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:17:11.143653+00:00</td>
+        <td>+5516997000842</td>
+        <td class="mono"></td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Teste E2E: enviar ai_draft por approve</td>
+        <td class="mono">Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.</td>
+        <td class="mono">Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.</td>
+        <td>
+          <span class="tag ok">sent</span>
+          
+        </td>
+        <td>True</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17137">
+    <input type="hidden" name="telefone" value="+5516997000842">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17137">
+    <input type="hidden" name="telefone" value="+5516997000842">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Esta é uma resposta automática gerada pela IA para teste. Por favor ignore.</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:14:38.389301+00:00</td>
+        <td>120363344661039712-group</td>
+        <td class="mono">Vagner</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3ADA47068F891EA01B29/GTWM-NYATrCpo0REfFCPlw==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17136">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3ADA47068F891EA01B29/GTWM-NYATrCpo0REfFCPlw==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17136">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:14:30.634466+00:00</td>
+        <td>5516992089829</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Teste direto via Z-API (env) - por favor ignore</td>
+        <td class="mono">Julia. Recebido. Vou ignorar</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17135">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebido. Vou ignorar">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17135">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebido. Vou ignorar</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:14:30.097431+00:00</td>
+        <td>120363344661039712-group</td>
+        <td class="mono">Vagner</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3AADA2580EB1A6986E6C/Zyzng3TfF1JHdOSq9NbcDA==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17134">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3AADA2580EB1A6986E6C/Zyzng3TfF1JHdOSq9NbcDA==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17134">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:14:22.832891+00:00</td>
+        <td>5516997733040</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Posso te enviar um orçamento da L15</td>
+        <td class="mono">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Pode enviar o orçamento da L15 que vou analisar e retorno com as observações</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17133">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Pode enviar o orçamento da L15 que vou analisar e retorno com as observações">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17133">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Pode enviar o orçamento da L15 que vou analisar e retorno com as observações</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:14:12.881519+00:00</td>
+        <td>5516997733040</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Darini, essa peça do closet não está mais na garantia, mas a peça do paisagismo está sim</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17132">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Darini, essa peça do closet não está mais na garantia, mas a peça do paisagismo está sim">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17132">
+    <input type="hidden" name="telefone" value="5516997733040">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:13:21.868459+00:00</td>
+        <td>5516992454548</td>
+        <td class="mono">Fabio Vicentini</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ok, obrigado!</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17131">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ok, obrigado!">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17131">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:13:20.530675+00:00</td>
+        <td>5516992454548</td>
+        <td class="mono">Fabio Vicentini</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Bem tbm Thais</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17130">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Bem tbm Thais">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17130">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:13:12.971018+00:00</td>
+        <td>120363195816573363-group</td>
+        <td class="mono">Priscila lumini</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">nos dois orçamentos que enviei ?</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17129">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="nos dois orçamentos que enviei ?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17129">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:12:18.260245+00:00</td>
+        <td>5516992089829</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Teste direto via Z-API (env) - por favor ignore</td>
+        <td class="mono">Julia. Recebido. Vou ignorar</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17128">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebido. Vou ignorar">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17128">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebido. Vou ignorar</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:10:21.094537+00:00</td>
+        <td>120363344661039712-group</td>
+        <td class="mono">Vagner</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Fabiano , esse material é uma lâmina potenza ( similar ao Dekton).
+Tenho amostra na minha loja</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17127">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Fabiano , esse material é uma lâmina potenza ( similar ao Dekton).
+Tenho amostra na minha loja">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17127">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:09:28.166054+00:00</td>
+        <td>120363344661039712-group</td>
+        <td class="mono">Vagner</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">@79057563680897</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17126">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="@79057563680897">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17126">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:04:41.413684+00:00</td>
+        <td>5516981346568</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Trícia*
+Boa tarde, Ciola! Tudo bem
+Gostaria de ver com você como está o andamento da obra do Mário. Como estamos chegando no final do ano, precisamos nos programar com antecedência para entregar os materiais e acompanhamentos em obra</td>
+        <td class="mono">Julia. Não encontrei informações específicas sobre o andamento da obra do Mário. Vou consultar a equipe e retorno com uma atualização o mais cedo possível</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17125">
+    <input type="hidden" name="telefone" value="5516981346568">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Não encontrei informações específicas sobre o andamento da obra do Mário. Vou consultar a equipe e retorno com uma atualização o mais cedo possível">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17125">
+    <input type="hidden" name="telefone" value="5516981346568">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Não encontrei informações específicas sobre o andamento da obra do Mário. Vou consultar a equipe e retorno com uma atualização o mais cedo possível</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:03:44.816134+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">OK</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17124">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="OK">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17124">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:03:30.235889+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Weider Vieira</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A5B71256970AEFB3397835D4FA7FFC86/IfzXgqDtr0x5lj3w7H8bYw==.ogg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17123">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A5B71256970AEFB3397835D4FA7FFC86/IfzXgqDtr0x5lj3w7H8bYw==.ogg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17123">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:03:23.98159+00:00</td>
+        <td>5516997963272</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">E sobre os tubos de PVC do paisagismo, a gente sempre orienta para deixar na altura rente a vegetação. Então, pode elevar os tubos na altura que está a vegetação hoje, aí vai ter variações, porque cada vegetação está numa altura diferente, que logo também elas vão crescer um pouquinho mais e vão camuflar cada vez mais esse tubo.</td>
+        <td class="mono">Julia. Entendi, excelente orientação. Então, deixe os tubos de PVC na altura atual da vegetação, para que possam ser camuflados conforme elas crescem. Se precisar de mais alguma informação ou dúvida, é só avisar</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17122">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Entendi, excelente orientação. Então, deixe os tubos de PVC na altura atual da vegetação, para que possam ser camuflados conforme elas crescem. Se precisar de mais alguma informação ou dúvida, é só avisar">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17122">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Entendi, excelente orientação. Então, deixe os tubos de PVC na altura atual da vegetação, para que possam ser camuflados conforme elas crescem. Se precisar de mais alguma informação ou dúvida, é só avisar</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:02:59.136988+00:00</td>
+        <td>5516997963272</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB055BDED56104A0A08AE/49hJZxBgfg_nM97YbSgAfQ==.ogg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17121">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB055BDED56104A0A08AE/49hJZxBgfg_nM97YbSgAfQ==.ogg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17121">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:02:19.120108+00:00</td>
+        <td>5516997963272</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB0C07168C7F67F74622E/toMSGkR0tchsFngnSSLgRw==.ogg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17120">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB0C07168C7F67F74622E/toMSGkR0tchsFngnSSLgRw==.ogg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17120">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:48.196369+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Entendi, em quanto tempo voce acha que consegue me entregar a seleção?</td>
+        <td class="mono">Julia. Vou consultar a equipe sobre o prazo para entregar a seleção das luminárias decorativas e já retorno com uma estimativa</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17119">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou consultar a equipe sobre o prazo para entregar a seleção das luminárias decorativas e já retorno com uma estimativa">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17119">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou consultar a equipe sobre o prazo para entregar a seleção das luminárias decorativas e já retorno com uma estimativa</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:29.947053+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FA7A3977C95574757F9/AGYLKq6BhjOQvEZWXxUpjw==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17118">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FA7A3977C95574757F9/AGYLKq6BhjOQvEZWXxUpjw==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17118">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:29.620067+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F16865512F21FEF47BA/BQE8gXgKjaLBuc74nXvcGw==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17117">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F16865512F21FEF47BA/BQE8gXgKjaLBuc74nXvcGw==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17117">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:29.246419+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FF41FF95518114CC269/dIODEFGpjmXdIaKqbycLAg==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17116">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FF41FF95518114CC269/dIODEFGpjmXdIaKqbycLAg==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17116">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:28.77198+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F68F29C74831AC72DCB/V55JRLsQOmYXzb3vE0JSTQ==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17115">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F68F29C74831AC72DCB/V55JRLsQOmYXzb3vE0JSTQ==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17115">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:28.393764+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F2C4A5D7E557E6AB44D/vlXX3JGthBMSbJnkxTpv4Q==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17114">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F2C4A5D7E557E6AB44D/vlXX3JGthBMSbJnkxTpv4Q==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17114">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:28.228729+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FDAAD9C1EB19F479E70/CKc2PIH3jmkhGc9jDbJUvA==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17113">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FDAAD9C1EB19F479E70/CKc2PIH3jmkhGc9jDbJUvA==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17113">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:28.141906+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FAD3137C2395B184E90/PY9-fhAX1X38bcyzE2vY-w==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17112">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FAD3137C2395B184E90/PY9-fhAX1X38bcyzE2vY-w==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17112">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:27.590476+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F22A41EB4B204678465/NVpWlqD_Q_0qIAS4sIGG4w==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17111">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F22A41EB4B204678465/NVpWlqD_Q_0qIAS4sIGG4w==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17111">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:26.81247+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F3FEFAC8E1AD887287E/PlyzjQCDka8HLPIZ2DbLxg==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17110">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3F3FEFAC8E1AD887287E/PlyzjQCDka8HLPIZ2DbLxg==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17110">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T15:01:26.947745+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FC8177778DCA17DC5E2/oN22bgaDTLC2EERUfU3rVg==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17109">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3FC8177778DCA17DC5E2/oN22bgaDTLC2EERUfU3rVg==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17109">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:59:02.752874+00:00</td>
+        <td>5521996263744</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">obrigada</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17108">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="obrigada">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17108">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:57:19.058534+00:00</td>
+        <td>5516997963272</td>
+        <td class="mono">HL</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Depois, eu também gostaria de perguntar sobre as PVC dos spots do jardim. Quanto que eu subo? A gente tinha conversado naquela visita de, por volta dessa época, já subia um tanto, né? Só que eu não lembro o quanto. Normalmente depende da vegetação ou tem um tamanho padrão?</td>
+        <td class="mono">Julia. O ideal é subir os spots do jardim considerando a vegetação existente e a altura desejada para o efeito de iluminação. Ouvimos falar em uma medida padrão na visita, mas podemos discutir mais isso. Geralmente, uma altura entre 0,5 m a 1,5 m é comum, mas depende do efeito que se quer alcançar. Recomendo que eu verifique essa informação e traga uma orientação mais precisa</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17107">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. O ideal é subir os spots do jardim considerando a vegetação existente e a altura desejada para o efeito de iluminação. Ouvimos falar em uma medida padrão na visita, mas podemos discutir mais isso. Geralmente, uma altura entre 0,5 m a 1,5 m é comum, mas depende do efeito que se quer alcançar. Recomendo que eu verifique essa informação e traga uma orientação mais precisa">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17107">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. O ideal é subir os spots do jardim considerando a vegetação existente e a altura desejada para o efeito de iluminação. Ouvimos falar em uma medida padrão na visita, mas podemos discutir mais isso. Geralmente, uma altura entre 0,5 m a 1,5 m é comum, mas depende do efeito que se quer alcançar. Recomendo que eu verifique essa informação e traga uma orientação mais precisa</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:56:27.143458+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Cada fornecedor tem um prazo diferente. Então decorativos é sempre um pouco mais específico. 
+Na seleção sempre colocamos os prazos</td>
+        <td class="mono">Julia. Entendi que os prazos dos fornecedores decorativos podem variar. Assim que tivermos o orçamento e os prazos necessários, informamos para que você possa planejar corretamente. Vou alinhar com a e retorno em breve</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17106">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Entendi que os prazos dos fornecedores decorativos podem variar. Assim que tivermos o orçamento e os prazos necessários, informamos para que você possa planejar corretamente. Vou alinhar com a e retorno em breve">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17106">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Entendi que os prazos dos fornecedores decorativos podem variar. Assim que tivermos o orçamento e os prazos necessários, informamos para que você possa planejar corretamente. Vou alinhar com a e retorno em breve</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:50:56.184581+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Certo, voces ja tem um orçamento?</td>
+        <td class="mono">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Não encontrei informações específicas sobre o orçamento para o projeto do Marcos. Vou alinhar com a e retorno com a confirmação assim que possível</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17105">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Não encontrei informações específicas sobre o orçamento para o projeto do Marcos. Vou alinhar com a e retorno com a confirmação assim que possível">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17105">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Não encontrei informações específicas sobre o orçamento para o projeto do Marcos. Vou alinhar com a e retorno com a confirmação assim que possível</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:50:48.082483+00:00</td>
+        <td>5516991656863</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Murillo*
+
+Boa tarde, Fred. Tudo bem?
+Podemos entregar a lona da Eliana Zaidem na sexta?</td>
+        <td class="mono">Julia. Vou confirmar a disponibilidade da lona da Eliana Zaidem para a entrega na sexta e retorno com a informação</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17104">
+    <input type="hidden" name="telefone" value="5516991656863">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou confirmar a disponibilidade da lona da Eliana Zaidem para a entrega na sexta e retorno com a informação">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17104">
+    <input type="hidden" name="telefone" value="5516991656863">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou confirmar a disponibilidade da lona da Eliana Zaidem para a entrega na sexta e retorno com a informação</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:50:16.798951+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ok</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17103">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ok">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17103">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:49:58.274301+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ele fechou somente a iluminação técnica. Nada de decorativos ainda</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17102">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ele fechou somente a iluminação técnica. Nada de decorativos ainda">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17102">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:49:28.675096+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Weider Vieira</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A583E3FFBE50DC255881393B36A283F1/DCLksiXcVBseCnYsVY0suA==.ogg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17101">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A583E3FFBE50DC255881393B36A283F1/DCLksiXcVBseCnYsVY0suA==.ogg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17101">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:49:21.022944+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Weider Vieira</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A5675E5A8997ED681328D46015AD5A69/7yafDeS50tOl6QTCX7rcmg==.ogg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17100">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Áudio recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/A5675E5A8997ED681328D46015AD5A69/7yafDeS50tOl6QTCX7rcmg==.ogg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17100">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:48:38.024133+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Murillo, o Marcos já fechou com voces a parte das luminárias e lustres?</td>
+        <td class="mono">Julia. Vou alinhar com a equipe sobre o fechamento da parte de luminárias e lustres com o Marcos e retorno com as informações</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17099">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou alinhar com a equipe sobre o fechamento da parte de luminárias e lustres com o Marcos e retorno com as informações">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17099">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou alinhar com a equipe sobre o fechamento da parte de luminárias e lustres com o Marcos e retorno com as informações</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:48:04.24181+00:00</td>
+        <td>120363399953606074-group</td>
+        <td class="mono">Mariane Ribeiro :: Lucenera Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">base de 30x30cm atenderá todos os modelos que estamos oferecendo</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17098">
+    <input type="hidden" name="telefone" value="120363399953606074-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="base de 30x30cm atenderá todos os modelos que estamos oferecendo">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17098">
+    <input type="hidden" name="telefone" value="120363399953606074-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:47:02.910518+00:00</td>
+        <td>5516997000042</td>
+        <td class="mono">Mariane Ribeiro :: Lucenera Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">sim, faz sentido</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_blocked_number</span>
+          <div class="mono" style="color:#b91c1c">Número em lista de bloqueio</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17097">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="sim, faz sentido">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17097">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:45:57.465758+00:00</td>
+        <td>5516997000042</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">sobre o poste girafa... então acredito se fizer 30x30 atende a todos...
+e a base não vai ficar em um lugar tao visivel</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_blocked_number</span>
+          <div class="mono" style="color:#b91c1c">Número em lista de bloqueio</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17096">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="sobre o poste girafa... então acredito se fizer 30x30 atende a todos...
+e a base não vai ficar em um lugar tao visivel">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17096">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:45:13.315402+00:00</td>
+        <td>5516997000042</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB05A20A6C2B6A5213FD3/dTp8XAYGV95lIl8w9kpLhQ==.pdf]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_blocked_number</span>
+          <div class="mono" style="color:#b91c1c">Número em lista de bloqueio</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17095">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB05A20A6C2B6A5213FD3/dTp8XAYGV95lIl8w9kpLhQ==.pdf]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17095">
+    <input type="hidden" name="telefone" value="5516997000042">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:41:38.32427+00:00</td>
+        <td>5516992089829</td>
+        <td class="mono">Pedro Laghi</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Oi Thais tudo bem?</td>
+        <td class="mono">Julia. Recebi sua mensagem. Se precisar de algo, estou por aqui</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag warn">error</span>
+          <div class="mono" style="color:#b91c1c">Falha no envio WhatsApp</div>
+        </td>
+        <td>True</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17094">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebi sua mensagem. Se precisar de algo, estou por aqui">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17094">
+    <input type="hidden" name="telefone" value="5516992089829">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebi sua mensagem. Se precisar de algo, estou por aqui</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:40:57.327649+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Quando ela tiver disponibilidade, nos avisem por favor</td>
+        <td class="mono">Julia. Claro, assim que a Silvia sinalizar a disponibilidade para a reunião, informaremos imediatamente</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17093">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Claro, assim que a Silvia sinalizar a disponibilidade para a reunião, informaremos imediatamente">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17093">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Claro, assim que a Silvia sinalizar a disponibilidade para a reunião, informaremos imediatamente</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:40:44.320799+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Bom, estamos com a proposta pronta, aguardando ela para apresentar</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17092">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Bom, estamos com a proposta pronta, aguardando ela para apresentar">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17092">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:40:27.502138+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Murillo*
+
+Bom dia. Tudo bem também
+Ok, fico aguardando</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17091">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="*Murillo*
+
+Bom dia. Tudo bem também
+Ok, fico aguardando">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17091">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:39:50.453689+00:00</td>
+        <td>120363195816573363-group</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">pode desconsiderar os outros modelos.. seria apenas a piccolo w</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17090">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="pode desconsiderar os outros modelos.. seria apenas a piccolo w">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17090">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:39:37.241329+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Murillo*
+
+Weider, lona da Eliana Zaidem chegou. Coloquei a entrega para sexta, tudo bem?</td>
+        <td class="mono">Julia. Agradeço pela atualização. Está confirmado para entrega na sexta-feira. Vou alinhar os detalhes necessários com a equipe</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17089">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Agradeço pela atualização. Está confirmado para entrega na sexta-feira. Vou alinhar os detalhes necessários com a equipe">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17089">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Agradeço pela atualização. Está confirmado para entrega na sexta-feira. Vou alinhar os detalhes necessários com a equipe</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:39:23.424355+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ela quer esperar um pouco pra ver ainda</td>
+        <td class="mono">Julia. Se a Silvia deseja aguardar, podemos manter o projeto em monitoramento e retomar a conversa quando ela estiver pronta para a reunião. Vou alinhar com a equipe e retorno assim que houver novidades</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17088">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Se a Silvia deseja aguardar, podemos manter o projeto em monitoramento e retomar a conversa quando ela estiver pronta para a reunião. Vou alinhar com a equipe e retorno assim que houver novidades">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17088">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Se a Silvia deseja aguardar, podemos manter o projeto em monitoramento e retomar a conversa quando ela estiver pronta para a reunião. Vou alinhar com a equipe e retorno assim que houver novidades</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:39:11.6464+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Vou confirmar com a construtora, ja te mando</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17087">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Vou confirmar com a construtora, ja te mando">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17087">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:58.566719+00:00</td>
+        <td>5516981211412</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Não chegou, avisei ele que estão chegando, porém, ainda estão dentro do prazo</td>
+        <td class="mono">Julia. Perfeito, assim que chegar qualquer novidade ou atualizações sobre os itens, me avise para que possamos dar continuidade</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17086">
+    <input type="hidden" name="telefone" value="5516981211412">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Perfeito, assim que chegar qualquer novidade ou atualizações sobre os itens, me avise para que possamos dar continuidade">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17086">
+    <input type="hidden" name="telefone" value="5516981211412">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Perfeito, assim que chegar qualquer novidade ou atualizações sobre os itens, me avise para que possamos dar continuidade</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:53.437583+00:00</td>
+        <td>5516997239080</td>
+        <td class="mono">SPL Arq. - Julia e Gabriela</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Bom dia! Tudo bem e voce??</td>
+        <td class="mono">Julia. Recebi sua mensagem e vou verificar o status do projeto da Silvia para falar sobre a reunião</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17085">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebi sua mensagem e vou verificar o status do projeto da Silvia para falar sobre a reunião">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17085">
+    <input type="hidden" name="telefone" value="5516997239080">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebi sua mensagem e vou verificar o status do projeto da Silvia para falar sobre a reunião</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:49.151982+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">okk</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17084">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="okk">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17084">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:41.97749+00:00</td>
+        <td>120363195816573363-group</td>
+        <td class="mono">Priscila lumini</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB003688A2E39D7EB30D7/mv5oIxqWC5EX51sFrx0g3w==.pdf]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17083">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB003688A2E39D7EB30D7/mv5oIxqWC5EX51sFrx0g3w==.pdf]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17083">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:41.938775+00:00</td>
+        <td>120363195816573363-group</td>
+        <td class="mono">Priscila lumini</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB0600C6BB73580B8458D/2-LtGxbq9mxsZaybU5NflA==.pdf]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17082">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Documento recebido: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3EB0600C6BB73580B8458D/2-LtGxbq9mxsZaybU5NflA==.pdf]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17082">
+    <input type="hidden" name="telefone" value="120363195816573363-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:32.418151+00:00</td>
+        <td>5517997256862</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">mas que cor é? na foto está indefinida e na descrição do produto nao tem, só fala que é metal</td>
+        <td class="mono">Julia. Vou verificar a cor específica dessa luminária e retorno com a informação</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17081">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou verificar a cor específica dessa luminária e retorno com a informação">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17081">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou verificar a cor específica dessa luminária e retorno com a informação</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:26.945731+00:00</td>
+        <td>5516981211412</td>
+        <td class="mono">Rogério</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Murilo
+O Arq. Rafael Pera esta me perguntando dessas arandelas se chegou</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17080">
+    <input type="hidden" name="telefone" value="5516981211412">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Murilo
+O Arq. Rafael Pera esta me perguntando dessas arandelas se chegou">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17080">
+    <input type="hidden" name="telefone" value="5516981211412">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:38:02.421431+00:00</td>
+        <td>5517997256862</td>
+        <td class="mono">Paulo Zappia</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Não, só essa cor mesmo</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17079">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Não, só essa cor mesmo">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17079">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:37:53.169217+00:00</td>
+        <td>5516997963272</td>
+        <td class="mono">HL</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">bom dia tudo bem ó o que dava para fazer já foi feito e aí ficou a luminária do balcão ali do bar mas a os spots do balcão da área de churrasqueira ali que não conseguiu colocar aí eu queria ver com vocês se tem alguma outra alternativa e por exemplo na luminária eu sei que consigo pensar numa solução mas aí teria que é fazer um furo um rasgozinho na luminária para passar os fios para os drivers ficar no forro de madeira e no e na churrasqueira a única solução que eu consigo pensar são drivers que consiga passar pelo buraquinho que que já tem do spot né mas precisa ser do tamanhozinho da lâmpada do daquele spotzinho eu gostaria de procurar outras soluções por favor obrigado</td>
+        <td class="mono">Julia. Para a luminária do balcão, se for necessário fazer um furo para a passagem dos fios, isso pode ser uma opção. Sobre os spots da churrasqueira, precisamos verificar se existem drivers que se ajustem ao espaço existente. Vou alinhar com a equipe e buscaremos alternativas viáveis para ambas as situações. Retorno em breve com mais detalhes</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17078">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Para a luminária do balcão, se for necessário fazer um furo para a passagem dos fios, isso pode ser uma opção. Sobre os spots da churrasqueira, precisamos verificar se existem drivers que se ajustem ao espaço existente. Vou alinhar com a equipe e buscaremos alternativas viáveis para ambas as situações. Retorno em breve com mais detalhes">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17078">
+    <input type="hidden" name="telefone" value="5516997963272">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Para a luminária do balcão, se for necessário fazer um furo para a passagem dos fios, isso pode ser uma opção. Sobre os spots da churrasqueira, precisamos verificar se existem drivers que se ajustem ao espaço existente. Vou alinhar com a equipe e buscaremos alternativas viáveis para ambas as situações. Retorno em breve com mais detalhes</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:37:29.550646+00:00</td>
+        <td>5517997256862</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">evoled</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17077">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="evoled">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17077">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:37:22.924983+00:00</td>
+        <td>5517997256862</td>
+        <td class="mono">Paulo Zappia</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Bom dia, de qual fornecedor seria?</td>
+        <td class="mono">Julia. Não posso informar sobre o fornecedor. Posso confirmar a disponibilidade e preço de venda para você</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17076">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Não posso informar sobre o fornecedor. Posso confirmar a disponibilidade e preço de venda para você">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17076">
+    <input type="hidden" name="telefone" value="5517997256862">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Não posso informar sobre o fornecedor. Posso confirmar a disponibilidade e preço de venda para você</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:30:41.187985+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Weider Vieira</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Tês, é isso mesmo, eu, pelo seu vídeo, eu não consegui quantificar, então eu vou passar lá só pra ver, eu já até anotei, fiz as anotações, é só chegar, conferir, hoje a noite tá pronto o orçamento, tá bom?</td>
+        <td class="mono">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Perfeito. Aguardamos suas anotações e a confirmação do orçamento para hoje à noite</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17075">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Perfeito. Aguardamos suas anotações e a confirmação do orçamento para hoje à noite">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17075">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">De qual produto/medida você precisa o preço? (ex: perfil L35, 1 metro)
+
+Julia. Perfeito. Aguardamos suas anotações e a confirmação do orçamento para hoje à noite</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:30:22.417992+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Emlly</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ok, Obrigada</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17074">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ok, Obrigada">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17074">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:29:49.554899+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">mas para fazer o orçamento ainda ne?!</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17073">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="mas para fazer o orçamento ainda ne?!">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17073">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:28:28.284447+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Murillo*
+
+Bom dia. Tudo bem, e com você?
+Estou confirmando com minha expedição se já conseguimos liberar amanhã</td>
+        <td class="mono">Julia. Recebi sua mensagem. Aguardo a confirmação da expedição sobre a liberação para amanhã</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17072">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebi sua mensagem. Aguardo a confirmação da expedição sobre a liberação para amanhã">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17072">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebi sua mensagem. Aguardo a confirmação da expedição sobre a liberação para amanhã</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:16:43.078969+00:00</td>
+        <td>120363344661039712-group</td>
+        <td class="mono">Mônica - Fabiano Correia</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Piso de dentro do elevador @270011759337552</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17071">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Piso de dentro do elevador @270011759337552">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17071">
+    <input type="hidden" name="telefone" value="120363344661039712-group">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:14:51.586492+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Emlly</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Obrigada</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17070">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Obrigada">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17070">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:14:48.37022+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Emlly</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Quando estiver pronto para retirar os itens, me avise por favor</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17069">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Quando estiver pronto para retirar os itens, me avise por favor">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17069">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:14:01.532211+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Emlly</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">tudo bem?</td>
+        <td class="mono">Julia. Vou continuar verificando as informações pendentes e retorno em breve</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17068">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou continuar verificando as informações pendentes e retorno em breve">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17068">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou continuar verificando as informações pendentes e retorno em breve</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:14:00.227981+00:00</td>
+        <td>5516991024716</td>
+        <td class="mono">Emlly</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Bom dia</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17067">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Bom dia">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17067">
+    <input type="hidden" name="telefone" value="5516991024716">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:13:43.055683+00:00</td>
+        <td>5516992038282</td>
+        <td class="mono">Rafael Péra</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">ok!</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17066">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="ok!">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17066">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:12:13.333432+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Weider Vieira</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Tudo bem, Thaís? Vou passar lá hoje, você me desculpa, eu nessa correria consegui sentar ontem, vi seus vídeos, consegui relacionar algumas coisas eu fiquei na dúvida, aí eu combinei com ela, vou passar lá daqui a pouco. Estou fazendo uma visita técnica, já vou passar lá.</td>
+        <td class="mono">Julia. Entendi. Vou observar as suas dúvidas e aguardo suas atualizações sobre a visita técnica</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17065">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Entendi. Vou observar as suas dúvidas e aguardo suas atualizações sobre a visita técnica">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17065">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Entendi. Vou observar as suas dúvidas e aguardo suas atualizações sobre a visita técnica</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:10:07.203201+00:00</td>
+        <td>5516992038282</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Do André é sinal de projeto. Então é aquele esquema que fizemos com o Tomaz, onde fazemos o briefing e o estudo, liberamos o pré-executivo. E quando for fechar as peças, abatemos o valor e fazemos o executivo em cima das peças escolhidas</td>
+        <td class="mono">Julia. Entendi. O procedimento é o mesmo do que foi feito com o Tomaz. Vou alinhar isso com a equipe e garantir que tudo esteja claro para o André</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17064">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Entendi. O procedimento é o mesmo do que foi feito com o Tomaz. Vou alinhar isso com a equipe e garantir que tudo esteja claro para o André">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17064">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Entendi. O procedimento é o mesmo do que foi feito com o Tomaz. Vou alinhar isso com a equipe e garantir que tudo esteja claro para o André</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:09:02.18671+00:00</td>
+        <td>5521996263744</td>
+        <td class="mono">Camilla</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Infelizmente, não sei informar, nunca me fizeram essa pergunta ou mencionaram instalação nesse tipo de forro</td>
+        <td class="mono">Julia. Para poder ajudar melhor, poderia me informar qual perfil específico vocês estão considerando para a instalação no forro acústico mineral?</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17063">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Para poder ajudar melhor, poderia me informar qual perfil específico vocês estão considerando para a instalação no forro acústico mineral?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17063">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Para poder ajudar melhor, poderia me informar qual perfil específico vocês estão considerando para a instalação no forro acústico mineral?</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:08:54.40394+00:00</td>
+        <td>5516992038282</td>
+        <td class="mono">Rafael Péra</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Esse do André, vocês fecharam só projeto ou sinal da compra das peças?</td>
+        <td class="mono">Julia. Preciso confirmar se foi fechado apenas o projeto ou se inclui também o sinal da compra das peças. Vou verificar isso e retorno logo</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17062">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Preciso confirmar se foi fechado apenas o projeto ou se inclui também o sinal da compra das peças. Vou verificar isso e retorno logo">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17062">
+    <input type="hidden" name="telefone" value="5516992038282">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Preciso confirmar se foi fechado apenas o projeto ou se inclui também o sinal da compra das peças. Vou verificar isso e retorno logo</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T14:08:41.727375+00:00</td>
+        <td>5521996263744</td>
+        <td class="mono">Camilla</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">oi Thais bom dia, tudo bem e você?</td>
+        <td class="mono">Julia. Estou bem, obrigado por perguntar. Como posso ajudar com seu projeto?</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17061">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Estou bem, obrigado por perguntar. Como posso ajudar com seu projeto?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17061">
+    <input type="hidden" name="telefone" value="5521996263744">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Estou bem, obrigado por perguntar. Como posso ajudar com seu projeto?</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:59:09.018553+00:00</td>
+        <td>5516993295487</td>
+        <td class="mono">renatoeletricistav2</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">combinado</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17060">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="combinado">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17060">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:57:50.119737+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ok, combinado</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_finalizer</span>
+          <div class="mono" style="color:#b91c1c">Mensagem de encerramento (ok/fechou).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17059">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ok, combinado">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17059">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:57:43.433767+00:00</td>
+        <td>5517992262314</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem] Arandela de vidro transparente com estrutura metálica, ideal para iluminação decorativa. Possui um design moderno e elegante, adequada para diversos ambientes.</td>
+        <td class="mono">Julia. Recebi a descrição da arandela. Vou verificar a disponibilidade e o preço para essa peça e retorno em breve</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17058">
+    <input type="hidden" name="telefone" value="5517992262314">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Recebi a descrição da arandela. Vou verificar a disponibilidade e o preço para essa peça e retorno em breve">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17058">
+    <input type="hidden" name="telefone" value="5517992262314">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Recebi a descrição da arandela. Vou verificar a disponibilidade e o preço para essa peça e retorno em breve</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:57:42.236207+00:00</td>
+        <td>5516993295487</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Combinado, só me avise uns 2 ou 3 dias antes para fazermos a separação</td>
+        <td class="mono">Julia. Combinado, avisarei com 2 ou 3 dias de antecedência para que possamos fazer a separação dos itens necessários</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17057">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Combinado, avisarei com 2 ou 3 dias de antecedência para que possamos fazer a separação dos itens necessários">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17057">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Combinado, avisarei com 2 ou 3 dias de antecedência para que possamos fazer a separação dos itens necessários</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:57:24.194238+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Eliane Lessa</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Vou repassar ao meu superior e te retorno</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17056">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Vou repassar ao meu superior e te retorno">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17056">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:56:59.180157+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ai, se quiserem. Podemos orçar para vocês</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17055">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ai, se quiserem. Podemos orçar para vocês">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17055">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:56:54.204503+00:00</td>
+        <td>5516992454548</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Thais*:
+Bom dia!! Tudo bem?
+sobre os perfis que faltam, semana que vem ficam prontos e conseguimos marcar a entrega
+
+sobre os plafons vou verificar e te retorno tambem</td>
+        <td class="mono">Julia. Estou silenciando esta mensagem e já vou verificar as informações sobre os perfis e plafons. Retorno em breve</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17054">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Estou silenciando esta mensagem e já vou verificar as informações sobre os perfis e plafons. Retorno em breve">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17054">
+    <input type="hidden" name="telefone" value="5516992454548">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Estou silenciando esta mensagem e já vou verificar as informações sobre os perfis e plafons. Retorno em breve</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:56:29.116892+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Eliane Lessa</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Compreendi</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17053">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Compreendi">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17053">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:55:33.43306+00:00</td>
+        <td>5516993295487</td>
+        <td class="mono">renatoeletricistav2</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Oi Murilo, bom dia, beleza? Murilo, acho que semana que vem ainda pode programar sim, tá? Deixa eu ver certinho aqui, terminou o forro? Não terminou, tá terminando essa semana então acredito que o material que eu tenho lá ainda dá para trabalhar mais essa semana. Onde que eu tava cortando até ainda lá lavanderia? Aí teve uns B.O. lá com a estrutura lá, teve que fazer reforço, então deixa eu te aviso, mas na semana que vem é certinho, tá? Mas deixa que eu te falo dia certo.</td>
+        <td class="mono">Julia. A entrega do restante do material do Airton pode ser programada para a próxima semana, dependendo da finalização do forro. Assim que você tiver a confirmação do dia, avise para que possamos organizar. Vou acompanhar isso com a também</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17052">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. A entrega do restante do material do Airton pode ser programada para a próxima semana, dependendo da finalização do forro. Assim que você tiver a confirmação do dia, avise para que possamos organizar. Vou acompanhar isso com a também">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17052">
+    <input type="hidden" name="telefone" value="5516993295487">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. A entrega do restante do material do Airton pode ser programada para a próxima semana, dependendo da finalização do forro. Assim que você tiver a confirmação do dia, avise para que possamos organizar. Vou acompanhar isso com a também</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:54:07.39523+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Porém, esse no caso, só vende o par</td>
+        <td class="mono">Julia. Se o modelo disponível só vem em pares, posso verificar a luminária específica e as opções de compra. Qual é o código ou descrição da luminária para que eu possa confirmar?</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17051">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Se o modelo disponível só vem em pares, posso verificar a luminária específica e as opções de compra. Qual é o código ou descrição da luminária para que eu possa confirmar?">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17051">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Se o modelo disponível só vem em pares, posso verificar a luminária específica e as opções de compra. Qual é o código ou descrição da luminária para que eu possa confirmar?</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:53:58.995971+00:00</td>
+        <td>5516993347526</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Thais*:
+Bom dia, Weider.. deu certo com a Monica?</td>
+        <td class="mono">Julia. Vou verificar com a sobre a situação com a Monica e retorno com a resposta</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17050">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou verificar com a sobre a situação com a Monica e retorno com a resposta">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17050">
+    <input type="hidden" name="telefone" value="5516993347526">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou verificar com a sobre a situação com a Monica e retorno com a resposta</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:53:49.169243+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ai no caso, se for só uma unidade, a gente já orça com uma fonte menos potente (que é menor e mais barata)</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17049">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ai no caso, se for só uma unidade, a gente já orça com uma fonte menos potente (que é menor e mais barata)">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17049">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:53:40.157211+00:00</td>
+        <td>5516992711980</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Oi Lucas, bom dia. É, tirando o trabalho, a parte em se dar peça que não tem LED, não tem garantia. Então, no sentido de às vezes ter que fazer alguma adaptação, não vejo problema. O que não pode danificar mesmo são os componentes de LED, tá bom? Aí só vai me dando um feedback aqui pra eu saber como vocês estão.</td>
+        <td class="mono">Julia. Entendi. É importante manter a integridade dos componentes de LED. Assim que tiver novidades ou feedbacks do Lucas, você vai me informando e vamos ajustando conforme necessário</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17048">
+    <input type="hidden" name="telefone" value="5516992711980">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Entendi. É importante manter a integridade dos componentes de LED. Assim que tiver novidades ou feedbacks do Lucas, você vai me informando e vamos ajustando conforme necessário">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17048">
+    <input type="hidden" name="telefone" value="5516992711980">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Entendi. É importante manter a integridade dos componentes de LED. Assim que tiver novidades ou feedbacks do Lucas, você vai me informando e vamos ajustando conforme necessário</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:53:09.646087+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Ambos precisam de fonte</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">sent_received</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17047">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Ambos precisam de fonte">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17047">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:52:58.039237+00:00</td>
+        <td>5516981735805</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">*Murillo*
+
+Bom dia, Leandro. Tudo bem?
+Os spots ficarão prontos amanhã, podemos pedir para entregarem na loja na sexta?</td>
+        <td class="mono">Julia. Vou alinhar o agendamento da entrega para sexta-feira e retorno com a confirmação</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17046">
+    <input type="hidden" name="telefone" value="5516981735805">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Vou alinhar o agendamento da entrega para sexta-feira e retorno com a confirmação">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17046">
+    <input type="hidden" name="telefone" value="5516981735805">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Vou alinhar o agendamento da entrega para sexta-feira e retorno com a confirmação</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:52:04.70677+00:00</td>
+        <td>5516996374411</td>
+        <td class="mono">Eliane Lessa</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">Seria apenas um</td>
+        <td class="mono">Julia. Para saber se a luminária precisa de fonte, vou verificar as especificações dela. Caso precise de uma fonte, posso indicar a adequada. Você pode me enviar essa informação</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17045">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Para saber se a luminária precisa de fonte, vou verificar as especificações dela. Caso precise de uma fonte, posso indicar a adequada. Você pode me enviar essa informação">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17045">
+    <input type="hidden" name="telefone" value="5516996374411">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Para saber se a luminária precisa de fonte, vou verificar as especificações dela. Caso precise de uma fonte, posso indicar a adequada. Você pode me enviar essa informação</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:52:00.001061+00:00</td>
+        <td>status@broadcast</td>
+        <td class="mono">Ana Paula Amorim</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3A070BCB58E6FE9848DD/hycA-66mqjcOB0MjKhwzMg==.jpg]</td>
+        <td class="mono">None</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">ignored_group_disabled</span>
+          <div class="mono" style="color:#b91c1c">Processamento de grupos desativado (apenas conversa direta).</div>
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17044">
+    <input type="hidden" name="telefone" value="status@broadcast">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="[Imagem recebida: https://f004.backblazeb2.com/file/temp-file-download/instances/3E504AA2037C00F7DC419E6774402775/3A070BCB58E6FE9848DD/hycA-66mqjcOB0MjKhwzMg==.jpg]">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17044">
+    <input type="hidden" name="telefone" value="status@broadcast">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual..."></textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+      <tr>
+        <td class="nowrap">2025-11-12T13:51:46.892475+00:00</td>
+        <td>5511947280663</td>
+        <td class="mono">Projetos :: LUCENERA Atelier da Luz</td>
+        <td>
+          
+            <span class="tag">pessoa</span>
+          
+        </td>
+        <td class="mono">que bom!!</td>
+        <td class="mono">Julia. Se precisar de algo específico, pode me avisar</td>
+        <td class="mono">None</td>
+        <td>
+          <span class="tag ">awaiting_approval</span>
+          
+        </td>
+        <td>None</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="/admin/action" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="17043">
+    <input type="hidden" name="telefone" value="5511947280663">
+    <input type="hidden" name="group_id" value="">
+    <input type="hidden" name="texto" value="Julia. Se precisar de algo específico, pode me avisar">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="/admin/action">
+    <input type="hidden" name="row_id" value="17043">
+    <input type="hidden" name="telefone" value="5511947280663">
+    <input type="hidden" name="group_id" value="">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">Julia. Se precisar de algo específico, pode me avisar</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    
+    </tbody>
+  </table>
+</body>
+</html>

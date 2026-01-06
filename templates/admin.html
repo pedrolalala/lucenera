@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Painel - Mensagens WhatsApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if refresh and refresh > 0 %}
+  <meta http-equiv="refresh" content="{{ refresh }}">
+  {% endif %}
+  <style>
+    body{font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:24px;}
+    table{border-collapse: collapse; width:100%;}
+    th,td{border:1px solid #ddd; padding:8px; vertical-align: top;}
+    th{background:#f2f2f2;}
+    .tag{display:inline-block; padding:2px 6px; border-radius:6px; font-size:12px; background:#eee; margin-right:6px;}
+    .ok{background:#d1fae5}
+    .warn{background:#fee2e2}
+    .btn{padding:6px 10px; border-radius:6px; border:1px solid #ccc; text-decoration:none; margin-right:4px; display:inline-block}
+    .btn:hover{background:#fafafa}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;}
+    .nowrap{white-space:nowrap}
+    .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px}
+    .muted{color:#555; font-size:12px}
+  </style>
+</head>
+<body>
+  <h2>Painel de Mensagens</h2>
+
+  <form method="get" action="{{ url_for('admin') }}" class="toolbar">
+    <label>Status:
+      <select name="status">
+        <option value="">(todos)</option>
+        {% for s in ['received','suggested','awaiting_approval','approved','sent','rejected','error','internal_saved'] %}
+        <option value="{{s}}" {% if s==f_status %}selected{% endif %}>{{s}}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Busca (tel/nome/texto):
+      <input type="text" name="q" value="{{q or ''}}" />
+    </label>
+    <label>Ordenar por:
+      <select name="order">
+        <option value="id"   {% if order_by=='id' %}selected{% endif %}>id (mais recentes primeiro)</option>
+        <option value="data" {% if order_by=='data' %}selected{% endif %}>data</option>
+      </select>
+    </label>
+    <label>Limite:
+      <select name="limit">
+        {% for n in [50,100,200,300] %}
+        <option value="{{n}}" {% if n==limit %}selected{% endif %}>{{n}}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Auto-refresh (s):
+      <input type="number" name="refresh" min="0" step="1" value="{{refresh or 0}}" style="width:70px">
+    </label>
+    <input type="hidden" name="before" value="">
+    <button class="btn" type="submit">Aplicar</button>
+
+    <a class="btn" href="{{ url_for('admin', status=f_status, q=q, order=order_by, limit=limit, refresh=refresh) }}">Atualizar</a>
+    {% if before %}
+      <a class="btn" href="{{ url_for('admin', status=f_status, q=q, order=order_by, limit=limit, refresh=refresh) }}">Voltar às mais recentes</a>
+    {% endif %}
+    {% if next_before %}
+      <a class="btn" href="{{ url_for('admin', status=f_status, q=q, order=order_by, limit=limit, refresh=refresh, before=next_before) }}">Mais antigas →</a>
+    {% endif %}
+    <span class="muted">Mostrando {{ rows|length }} registros ({{ 'ordenado por ' + order_by }})</span>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="nowrap">data</th>
+        <th>telefone</th>
+        <th>nome</th>
+        <th>grupo</th>
+        <th>mensagem</th>
+        <th>ai_draft</th>
+        <th>final_out</th>
+        <th>status</th>
+        <th>aprovado?</th>
+        <th>ações</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="nowrap">{{ r.get('data') }}</td>
+        <td>{{ r.get('telefone') }}</td>
+        <td class="mono">{{ (r.get('nome') or {}).get('display') }}</td>
+        <td>
+          {% if r.get('is_group') %}
+            <span class="tag">grupo</span><br>
+            <span class="mono">{{ r.get('group_name') }}</span><br>
+            <span class="mono">{{ r.get('group_id') }}</span>
+          {% else %}
+            <span class="tag">pessoa</span>
+          {% endif %}
+        </td>
+        <td class="mono">{{ (r.get('mensagem') or {}).get('text') }}</td>
+        <td class="mono">{{ r.get('ai_draft') }}</td>
+        <td class="mono">{{ r.get('final_out') }}</td>
+        <td>
+          <span class="tag {% if r.get('status') in ['sent','approved'] %}ok{% elif r.get('status') in ['error','rejected'] %}warn{% endif %}">{{ r.get('status') }}</span>
+          {% if r.get('error') %}<div class="mono" style="color:#b91c1c">{{ r.get('error') }}</div>{% endif %}
+        </td>
+        <td>{{ r.get('approved') }}</td>
+        <td>
+  <!-- Aprovar / Rejeitar (fluxo atual) -->
+  <form method="post" action="{{ url_for('admin_action') }}" style="margin-bottom:6px">
+    <input type="hidden" name="row_id" value="{{ r[id_col] if r.get(id_col) is not none else (r['id_num'] if r.get('id_num') is not none else r.get('idnum')) }}">
+    <input type="hidden" name="telefone" value="{{ r.get('telefone') }}">
+    <input type="hidden" name="group_id" value="{{ r.get('group_id') or '' }}">
+    <input type="hidden" name="texto" value="{{ r.get('ai_draft') or (r.get('mensagem') or {}).get('text') }}">
+    <button class="btn" name="op" value="aprovar">Aprovar & Enviar</button>
+    <button class="btn" name="op" value="rejeitar">Rejeitar</button>
+  </form>
+
+  <!-- NOVO: campo de resposta manual -->
+  <form method="post" action="{{ url_for('admin_action') }}">
+    <input type="hidden" name="row_id" value="{{ r[id_col] if r.get(id_col) is not none else (r['id_num'] if r.get('id_num') is not none else r.get('idnum')) }}">
+    <input type="hidden" name="telefone" value="{{ r.get('telefone') }}">
+    <input type="hidden" name="group_id" value="{{ r.get('group_id') or '' }}">
+    <textarea name="texto" rows="2" style="width:95%;" placeholder="Escreva uma resposta manual...">{{ r.get('ai_draft') or '' }}</textarea><br>
+    <button class="btn" name="op" value="enviar">Enviar Resposta Manual</button>
+  </form>
+</td>
+
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

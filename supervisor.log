@@ -1,0 +1,3083 @@
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 21092
+[start] ngrok PID = 27020
+[ngrok] URL pública: https://e19855432985.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e19855432985.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e19855432985.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e19855432985.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+19855432985.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e19855432985.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+468
+[ngrok] URL pública: https://f02f4c9115b2.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://f02f4c9115b2.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://f02f4c9115b2.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://f02f4c9115b2.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+yntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 6096
+[start] ngrok PID = 8332
+[ngrok] URL pública: https://f02f4c9115b2.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://f02f4c9115b2.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://f02f4c9115b2.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://f02f4c9115b2.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://f02f4c9115b2.Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 27036
+[start] ngrok PID = 4136
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line[start] Flask PID = 22868
+[start] ngrok PID = 28304
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", lin[start] Flask PID = 15432
+[start] ngrok PID = 22896
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 22468
+[start] ngrok PID = 12260
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 20120
+[start] ngrok PID = 22828
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 22768
+[start] ngrok PID = 10816
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://1e168fb7e23b.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://1[start] Flask PID = 15696
+[start] ngrok PID = 20360
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://1e168fb7e23b.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line[start] Flask PID = 27104
+[start] ngrok PID = 23952
+[ngrok] URL pública: https://1e168fb7e23b.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://1e168fb7e23b.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://1e168fb7e23b.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://2451c4fab996.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://2451c4fab996.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+eb UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://2451c4fab996.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admi[start] Flask PID = 26056
+[start] ngrok PID = 13056
+[ngrok] URL pública: https://8dbdd6af0c7d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://8dbdd6af0c7d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+k PID = 28256
+[ngrok] URL pública: https://8dbdd6af0c7d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://8dbdd6af0c7d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://1[start] Flask PID = 13028
+[start] ngrok PID = 19340
+[ngrok] URL pública: https://8dbdd6af0c7d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://8dbdd6af0c7d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://8dbdd6af0c7d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://2451c4fab996.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://2451c4fab996.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+al):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://2451c4fab996.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 5544
+[start] ngrok PID = 7288
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, pree[start] Flask PID = 17620
+[start] ngrok PID = 14988
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 8124
+[start] ngrok PID = 10900
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 20704
+[start] ngrok PID = 22716
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 12332
+[start] ngrok PID = 24308
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~[start] Flask PID = 15768
+[start] ngrok PID = 22904
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(B[start] Flask PID = 11212
+[start] ngrok PID = 4936
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+ [start] Flask PID = 4364
+[start] ngrok PID = 12052
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+rok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                 [start] Flask PID = 14720
+[start] ngrok PID = 1704
+[ngrok] URL pública: https://e51c4cc94dee.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+ED atualizado para: https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://e51c4cc94dee.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://e51c4cc94dee.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 8] Não há recursos de memória disponíveis suficientes para processar este comando
+ ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+n\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 9152
+[start] ngrok PID = 18648
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://4635685f1951.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 10164
+[start] ngrok PID = 4412
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://4635685f1951.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 18424
+[start] ngrok PID = 10104
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://1[start] Flask PID = 26976
+[start] ngrok PID = 23084
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://4635685f1951.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+reateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                   [start] Flask PID = 21928
+[start] ngrok PID = 27196
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://4635685f1951.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~[start] Flask PID = 20960
+[start] ngrok PID = 24904
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 27560
+[start] ngrok PID = 26348
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 26684
+[start] ngrok PID = 22972
+[ngrok] URL pública: https://4635685f1951.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://4635685f1951.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://4635685f1951.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://4635685f1951.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+le, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+          cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+Unable to create process using '"C:\script python\.venv\Scripts\python.exe" "C:\script python\lucenera\start_lucenera.py"': Não existem recursos de sistema suficientes para concluir o serviço solicitado.
+
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 9960
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 165, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+Unable to create process using '"C:\script python\.venv\Scripts\python.exe" "C:\script python\lucenera\start_lucenera.py"': O arquivo de paginação é muito pequeno para que esta operação seja concluída.
+
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 14856
+[start] ngrok PID = 4152
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, a[start] Flask PID = 11772
+[start] ngrok PID = 9980
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[w[start] Flask PID = 8368
+[start] ngrok PID = 18424
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+7.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  Fil[start] Flask PID = 3688
+[start] ngrok PID = 16972
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  [start] Flask PID = 20936
+[start] ngrok PID = 18080
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+              start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ers\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+L pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 8] Não há recursos de memória disponíveis suficientes para processar este comando
+^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1450] Não existem recursos de sistema suficientes para concluir o serviço solicitado
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 25220
+[start] ngrok PID = 27220
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 26412
+[start] ngrok PID = 27388
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 27192
+[start] ngrok PID = 23620
+[ngrok] URL pública: https://d5e82faf9b07.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://d5e82faf9b07.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://d5e82faf9b07.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 165, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 20468
+[start] ngrok PID = 3760
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado p[start] Flask PID = 19464
+[start] ngrok PID = 20036
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok[start] Flask PID = 11684
+[start] ngrok PID = 19236
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://56128813d314.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://56128813d314.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://56128813d314.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://56128813d314.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+ http:/[start] Flask PID = 20624
+[start] ngrok PID = 20712
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://b455ad611283.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: http[start] Flask PID = 20068
+[start] ngrok PID = 21308
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 10060
+[start] ngrok PID = 10676
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://56128813d314.ngrok-free.app
+[zapi] ERRO ao reconfigurar webhook: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://56128813d314.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://56128813d314.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+ line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+rograms\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://56128813d314.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 213, in main
+    app_proc = start_flask()
+  File "C:\script python\lucenera\start_lucenera.py", line 73, in start_flask
+    p = subprocess.Popen([py, app_path],
+                         stdout=app_out, stderr=app_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554[start] Flask PID = 26212
+[start] ngrok PID = 26528
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+[ngrok] novo túnel: https://56128813d314.ngrok-f[start] Flask PID = 11088
+[start] ngrok PID = 21692
+[ngrok] URL pública: https://35bb07f9552d.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://35bb07f9552d.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://35bb07f9552d.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://35bb07f9552d.ngrok-free.appTraceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+                start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+              ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+                        # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 26724
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    mai[start] Flask PID = 4772
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main[start] Flask PID = 21172
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 165, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 19548
+[start] ngrok PID = 9364
+[ngrok] URL pública: https://5b9830332531.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://5b9830332531.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via[start] Flask PID = 10204
+[start] ngrok PID = 17420
+[ngrok] URL pública: https://5b9830332531.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://5b9830332531.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://5b9830332531.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://1[start] Flask PID = 12280
+[start] ngrok PID = 20992
+[ngrok] URL pública: https://5b9830332531.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://5b9830332531.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://5b9830332531.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://5b9830332531.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+  ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+
+[start] ngrok PID = 23940
+[ngrok] URL pública: https://5b9830332531.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://5b9830332531.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://5b9830332531.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://5b9830332531.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ers\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+               start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Us[start] Flask PID = 17056
+[start] ngrok PID = 2700
+[ngrok] URL pública: https://5b9830332531.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://5b9830332531.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://5b9830332531.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://5b9830332531.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+5b9830332531.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://5b9830332531.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+ close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 14832
+[start] ngrok PID = 19084
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado [start] Flask PID = 25304
+[start] ngrok PID = 23276
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040)[start] Flask PID = 3408
+[start] ngrok PID = 5132
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 1[start] Flask PID = 21032
+[start] ngrok PID = 19892
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+pt python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+a: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 196, in main
+    ngrok_proc = start_ngrok()
+  File "C:\script python\lucenera\start_lucenera.py", line 83, in start_ngrok
+    p = subprocess.Popen(args, stdout=ngrok_out, stderr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args[start] Flask PID = 3196
+[start] ngrok PID = 1332
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] ngrok c[start] Flask PID = 10416
+[start] ngrok PID = 24092
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 25384
+[start] ngrok PID = 19740
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+tart] Flask PID = 15676
+[start] ngrok PID = 16892
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\s[start] Flask PID = 5656
+[start] ngrok PID = 26116
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+grok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin vi[start] Flask PID = 23556
+[start] ngrok PID = 18920
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: [start] Flask PID = 5784
+[start] ngrok PID = 7936
+[ngrok] URL pública: https://7cdb899d415c.ngrok-free.app
+[zapi] Webhook RECEIVED atualizado para: https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+
+=== URLs úteis ===
+- Admin local:            http://127.0.0.1:5000/admin
+- Admin via ngrok:        https://7cdb899d415c.ngrok-free.app/admin
+- Ping local:             http://127.0.0.1:5000/ping
+- ngrok Web UI (local):   http://127.0.0.1:4040/inspect/http
+- Webhook público:        https://7cdb899d415c.ngrok-free.app/webhook/whatsapp
+===================
+
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] Flask /ping falhou. Reiniciando app.py...
+[watchdog] ngrok caiu. Reiniciando e atualizando webhook...
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 198, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+r a URL pública do ngrok (porta 4040).
+hild
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 6792
+[start] ngrok PID = 26792
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 169, in main
+    public_url = wait_ngrok_url[start] Flask PID = 11088
+[start] ngrok PID = 20024
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", lin[start] Flask PID = 17060
+[start] ngrok PID = 3020
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 169, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 29532
+[start] ngrok PID = 30184
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 169, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+derr=ngrok_out, cwd=str(BASE_DIR))
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pedro\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1554, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+OSError: [WinError 1455] O arquivo de paginação é muito pequeno para que esta operação seja concluída
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 29468
+[start] ngrok PID = 29304
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 169, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+[start] Flask PID = 3216
+[start] ngrok PID = 29860
+Traceback (most recent call last):
+  File "C:\script python\lucenera\start_lucenera.py", line 249, in <module>
+    main()
+    ~~~~^^
+  File "C:\script python\lucenera\start_lucenera.py", line 169, in main
+    public_url = wait_ngrok_url(timeout=90)
+  File "C:\script python\lucenera\start_lucenera.py", line 102, in wait_ngrok_url
+    raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
+RuntimeError: Não consegui obter a URL pública do ngrok (porta 4040).
+
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"
+C:\script python\lucenera\start_lucenera.py:12: SyntaxWarning: invalid escape sequence '\S'
+  & ".venv\Scripts\python.exe" ".\start_lucenera.py"

@@ -1,0 +1,10 @@
+{
+    "approval_mode":  true,
+    "ctx_history_limit":  12,
+    "debounce_seconds":  60,
+    "force_process_all_groups":  false,
+    "id_column":  "id_num",
+    "ok":  true,
+    "outgoing_enabled":  true,
+    "table":  "mensagens"
+}
