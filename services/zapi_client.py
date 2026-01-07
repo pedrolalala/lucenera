@@ -2,9 +2,12 @@
 # services/zapi_client.py
 from __future__ import annotations
 
+import base64
+import logging
 import os
+from typing import Optional, Dict, Any, Tuple
+
 import requests
-from typing import Optional, Dict, Any
 
 ZAPI_BASE = os.getenv("ZAPI_BASE", "").rstrip("/")
 ZAPI_SENDTEXT_PATH = os.getenv("ZAPI_SENDTEXT_PATH", "/message/sendText")
@@ -13,6 +16,8 @@ ZAPI_INSTANCE = os.getenv("ZAPI_INSTANCE", "")
 ZAPI_CLIENT = os.getenv("ZAPI_CLIENT_TOKEN")  # opcional, algumas contas exigem Client-Token header
 ZAPI_TIMEOUT = float(os.getenv("ZAPI_TIMEOUT", "15"))
 ZAPI_TRY_ALIASES = os.getenv("ZAPI_TRY_ALIASES", "false").lower() in ("1", "true", "yes")
+
+logger = logging.getLogger("zapi.client")
 
 def _headers() -> Dict[str, str]:
     h = {"Content-Type": "application/json"}
@@ -112,3 +117,116 @@ def send_text_from_row(row: Dict[str, Any], message: str) -> bool:
         print(f">> send_text_from_row: sending to phone={phone} message={message[:80]!r}", flush=True)
         return send_text_to(phone=phone, message=message)
     return False
+
+
+def _media_headers() -> Dict[str, str]:
+    headers: Dict[str, str] = {}
+    if ZAPI_TOKEN:
+        headers["Authorization"] = f"Bearer {ZAPI_TOKEN}"
+    if ZAPI_CLIENT:
+        headers["Client-Token"] = ZAPI_CLIENT
+    return headers
+
+
+def _download_from_url(url: str) -> Tuple[bytes, str]:
+    logger.info("ZAPI_MEDIA_DOWNLOAD url=%s", url)
+    response = requests.get(url, timeout=ZAPI_TIMEOUT)
+    response.raise_for_status()
+    content_type = response.headers.get("Content-Type", "application/octet-stream")
+    return response.content, content_type
+
+
+def _download_media_from_id(media_id: str) -> Tuple[bytes, str]:
+    if not (ZAPI_BASE and ZAPI_INSTANCE and ZAPI_TOKEN):
+        raise RuntimeError("Z-API não configurada para download via media_id")
+
+    candidate_paths = [
+        f"/files/download/{media_id}",
+        f"/files/{media_id}",
+        f"/messages/download-file/{media_id}",
+        f"/message/download-file/{media_id}",
+        f"/media/download/{media_id}",
+    ]
+    last_error: Optional[Exception] = None
+    for path in candidate_paths:
+        url = f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}{path}"
+        try:
+            logger.info("ZAPI_MEDIA_FETCH media_id=%s url=%s", media_id, url)
+            response = requests.get(url, headers=_media_headers(), timeout=ZAPI_TIMEOUT)
+        except Exception as exc:
+            last_error = exc
+            logger.warning("ZAPI_MEDIA_FETCH_FAIL media_id=%s url=%s error=%s", media_id, url, exc)
+            continue
+
+        if response.status_code != 200:
+            logger.warning(
+                "ZAPI_MEDIA_FETCH_HTTP_FAIL media_id=%s url=%s status=%s",
+                media_id,
+                url,
+                response.status_code,
+            )
+            continue
+
+        content_type = response.headers.get("Content-Type", "")
+        lower_type = content_type.lower()
+        if "application/json" in lower_type or "text/json" in lower_type:
+            try:
+                payload = response.json()
+            except Exception as exc:
+                last_error = exc
+                logger.warning("ZAPI_MEDIA_FETCH_JSON_FAIL media_id=%s error=%s", media_id, exc)
+                continue
+            if isinstance(payload, dict):
+                for key in ("url", "downloadUrl", "fileUrl", "mediaUrl"):
+                    candidate = payload.get(key)
+                    if isinstance(candidate, str) and candidate.strip():
+                        return _download_from_url(candidate.strip())
+                base64_data = payload.get("file") or payload.get("data") or payload.get("base64File")
+                if isinstance(base64_data, str) and base64_data.strip():
+                    try:
+                        decoded = base64.b64decode(base64_data.strip(), validate=True)
+                        return decoded, payload.get("contentType") or "application/octet-stream"
+                    except Exception as exc:
+                        last_error = exc
+                        logger.warning("ZAPI_MEDIA_BASE64_FAIL media_id=%s error=%s", media_id, exc)
+                        continue
+            continue
+
+        return response.content, content_type or "application/octet-stream"
+
+    if last_error:
+        raise RuntimeError(f"Falha ao baixar mídia via Z-API: {last_error}") from last_error
+    raise RuntimeError("Falha ao baixar mídia via Z-API: nenhuma rota retornou sucesso")
+
+
+def download_media_bytes(event: Dict[str, Any]) -> Tuple[bytes, str]:
+    """Recebe dict contendo media_url ou media_id e retorna bytes + content-type."""
+
+    if not event:
+        raise ValueError("Payload vazio para download de mídia")
+
+    if isinstance(event, str):
+        return _download_from_url(event)
+
+    media_url = None
+    media_id = None
+
+    if isinstance(event, dict):
+        for key in ("media_url", "url", "download_url", "downloadUrl", "imageUrl", "fileUrl"):
+            value = event.get(key)
+            if isinstance(value, str) and value.strip():
+                media_url = value.strip()
+                break
+        if not media_url:
+            for key in ("media_id", "id", "mediaId", "file_id", "fileId", "mediaId"):
+                value = event.get(key)
+                if isinstance(value, str) and value.strip():
+                    media_id = value.strip()
+                    break
+
+    if media_url:
+        return _download_from_url(media_url)
+    if media_id:
+        return _download_media_from_id(media_id)
+
+    raise ValueError("Payload não contém media_url ou media_id")

@@ -29,7 +29,7 @@ from assistente_lucenera import pegar_json
 from selecionar_persona import selecionar_persona
 from selecionar_documento import selecionar_contexto
 from services.zapi_client import send_text_from_row, send_text_to
-from services.entregas_flow import handle_entregas_message
+from services.deliveries_flow import handle_event as handle_delivery_event
 import re, unicodedata, time
 from datetime import datetime, timedelta, timezone
 # === Equipes / contatos internos (uso interno; não expor ao cliente)
@@ -43,7 +43,6 @@ from services.config_equipes import (
     extrair_intencao_financeiro,
     extrair_intencao_estoque,
     is_internal_message,
-    _notificar_entrega_no_teams,
     ENTREGADORES_WHATS,
 )
 
@@ -584,6 +583,12 @@ ZAPI_WEBHOOK_MODE = (_clean_env("ZAPI_WEBHOOK_MODE") or "all").strip().lower()  
 
 # TEAMS
 TEAMS_WEBHOOK_URL = _clean_env("TEAMS_WEBHOOK_URL") or ""
+TEAMS_WEBHOOK_ADMIN = _clean_env("TEAMS_WEBHOOK_ADMIN") or ""
+TEAMS_WEBHOOK_ENTREGAS = (
+    _clean_env("TEAMS_WEBHOOK_ENTREGAS")
+    or _clean_env("TEAMS_WEBHOOK_ENTREGAFINALIZADA")
+    or ""
+)
 TEAMS_ACTION_TOKEN = _clean_env("TEAMS_ACTION_TOKEN") or ""
 
 # ngrok
@@ -596,6 +601,7 @@ NGROK_KILL_ON_START = _to_bool(_clean_env("KILL_NGROK_ON_BOOT") or _clean_env("N
 # Tabela
 TABLE = _clean_env("TABLE") or "mensagens"
 ID_COLUMN = _clean_env("ID_COLUMN") or "id_num"
+DELIVERY_CALLBACKS_TABLE = _clean_env("DELIVERY_CALLBACKS_TABLE") or "whatsapp_delivery_callbacks"
 
 # Finalizadores e limpeza
 _FINALIZER_TERMS = {
@@ -1289,6 +1295,66 @@ def _save_in_supabase_from_zapi(
     except Exception as e:
         print(">> _save_in_supabase_from_zapi erro:", e, flush=True)
         return None
+
+
+def _save_delivery_callback(
+    payload: dict,
+    *,
+    parsed: Optional[dict] = None,
+) -> Optional[dict]:
+    """Persist DeliveryCallback events with raw payload for later auditing."""
+    if not supabase:
+        print(">> DELIVERY_CALLBACK: Supabase indisponível, registrando somente log.", flush=True)
+        return None
+
+    raw_payload = payload or {}
+    try:
+        norm = parsed if isinstance(parsed, dict) else parse_zapi_payload(raw_payload)
+    except Exception as exc:
+        print(">> DELIVERY_CALLBACK: falha ao normalizar payload:", exc, flush=True)
+        norm = {}
+
+    message_id = (norm.get("message_id") or raw_payload.get("messageId") or "").strip() or None
+    status_candidates: Sequence[Any] = (
+        norm.get("status"),
+        raw_payload.get("status"),
+        raw_payload.get("deliveryStatus"),
+        raw_payload.get("error"),
+        raw_payload.get("result"),
+    )
+    status_val = None
+    for candidate in status_candidates:
+        if isinstance(candidate, str) and candidate.strip():
+            status_val = candidate.strip()
+            break
+
+    error_text = raw_payload.get("error")
+    error_val = error_text.strip() if isinstance(error_text, str) else None
+    telefone_norm = _digits_only(norm.get("telefone") or raw_payload.get("phone") or "")
+    instance_id = norm.get("instance_id") or raw_payload.get("instanceId")
+
+    now_iso = _now_iso()
+    record: Dict[str, Any] = {
+        "kind": "CALLBACK",
+        "message_id": message_id,
+        "status": status_val,
+        "error": error_val,
+        "phone": telefone_norm or None,
+        "instance_id": instance_id,
+        "raw_json": raw_payload,
+        "created_at": now_iso,
+        "updated_at": now_iso,
+    }
+    data_clean = {k: v for k, v in record.items() if v is not None}
+
+    try:
+        response = supabase.table(DELIVERY_CALLBACKS_TABLE).insert(data_clean).execute()
+    except Exception as exc:
+        print(">> DELIVERY_CALLBACK: erro ao salvar:", exc, flush=True)
+        return None
+
+    saved_row = (response.data or [None])[0]
+    return saved_row if isinstance(saved_row, dict) else None
 
 def parse_zapi_payload(payload: dict) -> dict:
     p = payload or {}
@@ -2037,6 +2103,41 @@ def _teams_post_card(title: str, text: str, buttons: List[Dict[str, str]] | None
     except Exception as e:
         print(">> TEAMS erro:", e, flush=True)
         return False
+
+
+def _notify_delivery_teams(event_type: str, payload: Dict[str, Any]) -> None:
+    webhook = TEAMS_WEBHOOK_ENTREGAS or TEAMS_WEBHOOK_ADMIN or TEAMS_WEBHOOK_URL
+    if not webhook:
+        print(f"DELIVERY_TEAMS_FAIL event={event_type} reason=missing_webhook", flush=True)
+        return
+
+    if event_type == "start":
+        text = f"📦 Inicio confirmacao de entrega - phone: {payload.get('phone') or '-'}"
+    elif event_type == "finish":
+        text = (
+            "✅ Entrega finalizada - Projeto: {proj} | Endereco: {endereco} | Recebedor: {recebedor} | Obs: {obs} | Foto: {foto}".format(
+                proj=payload.get("projeto_numero") or "-",
+                endereco=payload.get("endereco") or "-",
+                recebedor=payload.get("recebedor_nome") or "-",
+                obs=payload.get("observacao") or "-",
+                foto=payload.get("foto_url") or "-",
+            )
+        )
+    else:
+        text = f"Delivery event {event_type}: {payload}"
+
+    body = {"text": text}
+    try:
+        resp = requests.post(webhook, json=body, timeout=8)
+        if 200 <= resp.status_code < 300:
+            print(f"DELIVERY_TEAMS_SENT event={event_type} status={resp.status_code}", flush=True)
+        else:
+            print(
+                f"DELIVERY_TEAMS_FAIL event={event_type} status={resp.status_code} body={resp.text[:120]}",
+                flush=True,
+            )
+    except Exception as exc:
+        print(f"DELIVERY_TEAMS_FAIL event={event_type} error={exc}", flush=True)
 
 def _teams_format_text(row: dict) -> str:
     nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
@@ -2997,6 +3098,9 @@ def chat():
 
 def _is_message_event(ev: dict) -> bool:
     if not isinstance(ev, dict): return False
+    event_type = str(ev.get("type") or ev.get("event") or "").strip().lower()
+    if event_type == "deliverycallback":
+        return True
     if ev.get("fromMe") is True: return True
     if _extract_text_from_payload(ev): return True
     if any(k in ev for k in ("image","video","audio","document")): return True
@@ -3060,7 +3164,6 @@ def webhook_whatsapp():
         events = []
 
     saved_any = False
-    entrega_flow_triggered = False
     for ev in events:
         if not _is_message_event(ev):
             continue
@@ -3069,6 +3172,30 @@ def webhook_whatsapp():
             norm_ev = parse_zapi_payload(ev or {})
         except Exception:
             norm_ev = {}
+
+        event_type_norm = str(norm_ev.get("type") or ev.get("type") or ev.get("event") or "").strip().lower()
+        if event_type_norm == "deliverycallback":
+            saved_cb = _save_delivery_callback(ev, parsed=norm_ev)
+            status_log = next(
+                (
+                    str(candidate).strip()
+                    for candidate in (
+                        norm_ev.get("status"),
+                        ev.get("status"),
+                        ev.get("deliveryStatus"),
+                        ev.get("error"),
+                    )
+                    if isinstance(candidate, str) and candidate.strip()
+                ),
+                "",
+            )
+            message_id_log = (norm_ev.get("message_id") or ev.get("messageId") or "").strip()
+            telefone_log = _digits_only(norm_ev.get("telefone") or ev.get("phone") or "")
+            print(
+                f">> DELIVERY_CALLBACK_ACCEPTED message_id={message_id_log or '-'} status={status_log or '-'} phone={telefone_log or '-'} saved={bool(saved_cb)}",
+                flush=True,
+            )
+            continue
 
         try:
             if is_internal_message(norm_ev):
@@ -3100,71 +3227,40 @@ def webhook_whatsapp():
             flush=True,
         )
 
-        entrega_row = dict(row)
-        msg_field = entrega_row.get("mensagem")
-        if isinstance(msg_field, dict):
-            entrega_row["mensagem"] = (
-                msg_field.get("text")
-                or msg_field.get("body")
-                or msg_field.get("message")
-                or ""
+        telefone_norm_row = _digits_only(row.get("telefone") or "")
+        if telefone_norm_row and telefone_norm_row in ENTREGADORES_WHATS:
+            reply_text = handle_delivery_event(
+                row,
+                telefone_norm_row,
+                raw_event=ev,
+                supabase_client=supabase,
+                teams_notify_func=_notify_delivery_teams,
             )
-        nome_field = entrega_row.get("nome")
-        if isinstance(nome_field, dict):
-            entrega_row["nome"] = nome_field.get("display")
-
-        print(
-            "[DEBUG ENTREGAS] telefone row:",
-            row.get("telefone"),
-            "mensagem bruta:",
-            row.get("mensagem"),
-            flush=True,
-        )
-        print(
-            "[DEBUG ENTREGAS] telefone entrega_row:",
-            entrega_row.get("telefone"),
-            "mensagem entrega_row:",
-            entrega_row.get("mensagem"),
-            flush=True,
-        )
-
-        reply_text, entrega_finalizada = handle_entregas_message(entrega_row)
-        print(
-            "[DEBUG ENTREGAS] reply_text:",
-            reply_text,
-            "entrega_finalizada is not None?",
-            entrega_finalizada is not None,
-            flush=True,
-        )
-        if reply_text is not None:
-            entrega_flow_triggered = True
+            print(
+                "DELIVERY_WIZARD_BYPASS_DEBOUNCE phone=",
+                telefone_norm_row,
+                "reply_present=",
+                bool(reply_text),
+                flush=True,
+            )
             row["__entrega_flow__"] = True
-            telefone_destino = row.get("telefone")
-            if telefone_destino and OUTGOING_ENABLED:
-                try:
-                    send_text_to(phone=telefone_destino, message=reply_text)
-                except Exception as envio_exc:
+            row["__delivery_flow__"] = True
+            if reply_text:
+                telefone_destino = row.get("telefone")
+                if telefone_destino and OUTGOING_ENABLED:
+                    try:
+                        send_text_to(phone=telefone_destino, message=reply_text)
+                    except Exception as envio_exc:
+                        print(
+                            f">> deliveries_flow: erro ao enviar resposta automatica: {envio_exc}",
+                            flush=True,
+                        )
+                else:
                     print(
-                        f">> entregas_flow: erro ao enviar resposta automática: {envio_exc}",
+                        ">> [DRY RUN] deliveries_flow: resposta nao enviada (OUTGOING_ENABLED=0 ou telefone ausente)",
                         flush=True,
                     )
-            else:
-                print(
-                    ">> [DRY RUN] entrega: resposta não enviada (OUTGOING_ENABLED=0 ou telefone ausente)",
-                    flush=True,
-                )
-
-            if entrega_finalizada is not None:
-                status_entrega = (entrega_finalizada.get("status") or "").strip().lower()
-                try:
-                    if status_entrega in {"coletando_endereco", "concluida"}:
-                        _notificar_entrega_no_teams(entrega_finalizada)
-                except Exception as teams_exc:
-                    print(
-                        f">> entregas_flow: falha ao notificar Teams: {teams_exc}",
-                        flush=True,
-                    )
-            continue
+            return jsonify({"ok": True, "entrega_flow": True, "delivery_flow": True, "reply_sent": bool(reply_text)}), 200
 
 
         # skip grupos
@@ -3205,9 +3301,6 @@ def webhook_whatsapp():
         if not is_from_me:
             chat_key = _row_chat_key(row)
             _schedule_debounce(chat_key, row)
-
-    if entrega_flow_triggered:
-        return jsonify({"ok": True, "entrega_flow": True}), 200
 
     return {"ok": True, "saved": saved_any}, 200
 
