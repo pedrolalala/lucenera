@@ -14,7 +14,7 @@ import sys
 sys.path.insert(0, str(BASE_DIR))
 
 # 3) mesmo client do app (mesmos tokens e mesma forma de carregar .env)
-from supabase_client import supabase
+from supabase_client import get_supabase_client
 
 # 3) mesma tabela/coluna que o /admin usa
 TABLE = os.getenv("SUPABASE_TABLE") or os.getenv("TABLE_MESSAGES") or "mensagens"
@@ -38,6 +38,11 @@ def testar_insercao():
         "used_ai": False,
         "approval_mode": True
     }
+
+    supabase = get_supabase_client()
+    if supabase is None:
+        print("!! Supabase client indisponível. Configure SUPABASE_URL e chave service role.")
+        return
 
     ins = supabase.table(TABLE).insert(payload).execute()
     if not ins or not ins.data:

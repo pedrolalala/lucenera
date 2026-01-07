@@ -30,9 +30,14 @@ else:
     phone = phone_raw
 
 try:
-    from supabase_client import supabase, DEFAULT_TABLE
+    from supabase_client import get_supabase_client, DEFAULT_TABLE
 except Exception as e:
     print('ERROR importing supabase_client:', e, file=sys.stderr)
+    sys.exit(3)
+
+supabase = get_supabase_client()
+if supabase is None:
+    print('ERROR: Supabase client unavailable (check SUPABASE env vars)', file=sys.stderr)
     sys.exit(3)
 
 now = datetime.now(timezone.utc).isoformat()

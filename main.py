@@ -17,6 +17,15 @@ from dotenv import load_dotenv, find_dotenv
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
 import requests  # Teams, ngrok, Z-API
 
+# =========================
+# BOOT .env (antes de qualquer os.getenv)
+# =========================
+BASE_DIR = Path(__file__).resolve().parent
+DOTENV_PATH = find_dotenv()
+load_dotenv(DOTENV_PATH or (BASE_DIR / ".env"))
+load_dotenv(BASE_DIR / ".env")
+print(f">> .env carregado de: {DOTENV_PATH or '(não encontrado)'}", flush=True)
+
     # === OpenAI/serviços
 from services.openai_helpers import (
         cliente,
@@ -92,16 +101,6 @@ CONTEXT_LOOKBACK_MSGS = int(os.getenv("CONTEXT_LOOKBACK_MSGS", "15"))
 
 _last_greeting_at: dict[str, float] = {}
 # ==== fim dos classificadores ====
-
-    # =========================
-    # BOOT .env
-    # =========================
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(find_dotenv() or (BASE_DIR / ".env"))
-load_dotenv(BASE_DIR / ".env")
-DOTENV_PATH = find_dotenv()
-print(f">> .env carregado de: {DOTENV_PATH or '(não encontrado)'}", flush=True)
-
 # =====================================================================
 # LOGGING
 # =====================================================================
@@ -697,8 +696,25 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
 # SUPABASE CLIENT
 # =====================================================================
 try:
-    from supabase_client import supabase, column_exists as _supabase_column_exists
-    print(">> Supabase client: OK", flush=True)
+    from supabase_client import (
+        get_supabase_client,
+        column_exists as _supabase_column_exists,
+        supabase_diagnostics,
+    )
+    _sb_diag = supabase_diagnostics()
+    print(
+        ">> Supabase diag: url_present=%s url_prefix=%s key_present=%s key_prefix=%s",
+        _sb_diag["url_present"],
+        _sb_diag["url_prefix"],
+        _sb_diag["key_present"],
+        _sb_diag["key_prefix"],
+        flush=True,
+    )
+    supabase = get_supabase_client()
+    if supabase:
+        print(">> Supabase client: OK", flush=True)
+    else:
+        print(">> Supabase client: indisponível (verifique SUPABASE env)", flush=True)
 except Exception as e:
     supabase = None
     _supabase_column_exists = None

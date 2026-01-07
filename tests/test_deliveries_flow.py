@@ -115,12 +115,13 @@ class DeliveriesWizardTestCase(unittest.TestCase):
         self.fake_supabase = FakeSupabase()
         self.teams_events = []
         self.download_patcher = mock.patch("services.deliveries_flow.download_media_bytes", autospec=True)
-        self.upload_patcher = mock.patch("services.deliveries_flow.upload_delivery_photo", autospec=True)
+        self.upload_patcher = mock.patch("services.deliveries_flow.upload_to_storage", autospec=True)
         self.signed_patcher = mock.patch("services.deliveries_flow.create_signed_url", autospec=True)
         self.mock_download = self.download_patcher.start()
         self.mock_upload = self.upload_patcher.start()
         self.mock_signed = self.signed_patcher.start()
         self.mock_download.return_value = (b"fake-bytes", "image/jpeg")
+        self.mock_upload.return_value = {"ok": True, "error": None, "raw": {}, "path": "25180/test.jpg"}
         self.mock_signed.return_value = "https://storage.test/signed/25180/file.jpg"
 
     def _latest_session(self):
@@ -225,7 +226,7 @@ class DeliveriesWizardTestCase(unittest.TestCase):
             teams_notify_func=self._capture_teams,
         )
         self.assertIsNotNone(reply)
-        self.assertIn("observacao", (reply or "").lower())
+        self.assertIn("responda não", (reply or "").lower())
         session_row = self._latest_session()
         self.assertEqual(session_row["step"], deliveries_flow.STATE_WAITING_OBSERVATION)
         self.assertEqual(session_row["recebedor_nome"], "Joao Silva")

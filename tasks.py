@@ -48,7 +48,7 @@ from selecionar_persona import selecionar_persona
 from selecionar_documento import selecionar_contexto
 
 # ========= Supabase =========
-from supabase_client import create_client as _sb_create_client
+from supabase_client import get_supabase_client
 from supabase_helpers import _sb_update, _get_row_id
 
 # ========= App/Fluxo =========
@@ -70,7 +70,7 @@ celery.conf.update(
 )
 
 # ========= Supabase client =========
-_sb = _sb_create_client()
+_sb = get_supabase_client()
 
 
 # --------------------------------------------------------------------------------------

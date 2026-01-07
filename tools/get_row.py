@@ -9,7 +9,7 @@ sys.path.insert(0, BASE_DIR)
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 try:
-    from supabase_client import supabase, DEFAULT_TABLE, DEFAULT_IDCOL  # noqa: E402
+    from supabase_client import get_supabase_client, DEFAULT_TABLE, DEFAULT_IDCOL  # noqa: E402
 except Exception as e:
     print('ERROR importing supabase_client:', e, file=sys.stderr)
     sys.exit(2)
@@ -19,6 +19,10 @@ if len(sys.argv) < 2:
     sys.exit(2)
 
 idval = sys.argv[1]
+supabase = get_supabase_client()
+if supabase is None:
+    print('ERROR: Supabase client unavailable (check SUPABASE env vars)', file=sys.stderr)
+    sys.exit(2)
 try:
     r = supabase.table(DEFAULT_TABLE).select('*').eq(DEFAULT_IDCOL, idval).limit(1).execute()
     data = r.data or []

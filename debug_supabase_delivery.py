@@ -3,7 +3,9 @@
 import os
 import traceback
 
-from supabase_client import supabase
+from supabase_client import ensure_env_loaded, get_supabase_client
+
+ensure_env_loaded()
 
 DELIVERY_SESSIONS_TABLE = os.getenv("DELIVERY_SESSIONS_TABLE", "delivery_sessions")
 
@@ -18,10 +20,15 @@ def main() -> None:
     print(f"SUPABASE_URL={url}")
     print(f"SUPABASE_KEY_PREFIX={service_role[:12] if service_role else '<empty>'}")
 
+    client = get_supabase_client()
+    if client is None:
+        print("Supabase client indisponível (verifique variáveis SUPABASE_*)")
+        return
+
     try:
         _print_header("SELECT LAST SESSION")
         resp = (
-            supabase
+            client
             .table(DELIVERY_SESSIONS_TABLE)
             .select("*")
             .order("id", desc=True)
@@ -40,7 +47,7 @@ def main() -> None:
             "obra_codigo": "99999",
             "step": "TESTE_PY",
         }
-        resp = supabase.table(DELIVERY_SESSIONS_TABLE).insert(insert_payload).execute()
+        resp = client.table(DELIVERY_SESSIONS_TABLE).insert(insert_payload).execute()
         print(resp.data)
     except Exception:
         print("Error inserting test session:")
@@ -49,7 +56,7 @@ def main() -> None:
     try:
         _print_header("SELECT RECENT SESSIONS")
         resp = (
-            supabase
+            client
             .table(DELIVERY_SESSIONS_TABLE)
             .select("*")
             .eq("entregador_phone", "5516992089829")

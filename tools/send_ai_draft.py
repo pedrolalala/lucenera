@@ -11,7 +11,7 @@ sys.path.insert(0, BASE_DIR)
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 try:
-    from supabase_client import supabase, DEFAULT_TABLE, DEFAULT_IDCOL
+    from supabase_client import get_supabase_client, DEFAULT_TABLE, DEFAULT_IDCOL
     from services import zapi_client
 except Exception as e:
     print('ERROR importing modules:', e)
@@ -22,6 +22,10 @@ if len(sys.argv) < 2:
     sys.exit(2)
 
 idval = sys.argv[1]
+supabase = get_supabase_client()
+if not supabase:
+    print('ERROR: Supabase client unavailable (check SUPABASE env vars)')
+    sys.exit(2)
 try:
     r = supabase.table(DEFAULT_TABLE).select('*').eq(DEFAULT_IDCOL, idval).limit(1).execute()
     data = r.data or []

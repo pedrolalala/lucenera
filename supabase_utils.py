@@ -5,11 +5,15 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Set, cast
+from typing import Any, Dict, Optional, Set, Tuple, cast
 
-from supabase_client import supabase
+from postgrest.exceptions import APIError
+
+from supabase_client import ensure_env_loaded, get_supabase_client
 
 Row = Dict[str, Any]
+ensure_env_loaded()
+
 DELIVERY_SESSIONS_TABLE = os.getenv("DELIVERY_SESSIONS_TABLE", "delivery_sessions")
 DELIVERIES_TABLE = os.getenv("DELIVERIES_TABLE", "deliveries")
 
@@ -17,6 +21,7 @@ logger = logging.getLogger("deliveries.supabase")
 
 _SESSION_COLUMNS_CACHE: Optional[Set[str]] = None
 _DELIVERIES_COLUMNS_CACHE: Optional[Set[str]] = None
+_REPORTED_SCHEMA_GAPS: Set[Tuple[str, str]] = set()
 
 
 def _as_row(value: Any) -> Optional[Row]:
@@ -36,7 +41,32 @@ def _digits_only(value: Optional[str]) -> str:
 
 
 def _client(maybe_client=None):
-    return maybe_client or supabase
+    return maybe_client or get_supabase_client()
+
+
+def _probe_optional_columns(sb, table: str, optional: Set[str]) -> Set[str]:
+    available: Set[str] = set()
+    missing: Set[str] = set()
+    for col in optional:
+        try:
+            sb.table(table).select(col).limit(0).execute()
+        except APIError as exc:  # coluna ausente no schema
+            if getattr(exc, "code", "") in {"PGRST204", "42703"}:
+                missing.add(col)
+                continue
+            logger.debug(
+                "SUPABASE_SCHEMA_PROBE_FAIL table=%s column=%s code=%s", table, col, getattr(exc, "code", "?"),
+            )
+        except Exception:
+            logger.exception("SUPABASE_SCHEMA_PROBE_EXCEPTION table=%s column=%s", table, col)
+        else:
+            available.add(col)
+    for col in sorted(missing):
+        key = (table, col)
+        if key not in _REPORTED_SCHEMA_GAPS:
+            logger.warning("SUPABASE_SCHEMA_MISSING table=%s column=%s", table, col)
+            _REPORTED_SCHEMA_GAPS.add(key)
+    return available
 
 
 def _session_columns(sb) -> Set[str]:
@@ -51,11 +81,11 @@ def _session_columns(sb) -> Set[str]:
         "obra_codigo",
         "foto_media_id",
         "foto_path",
-        "foto_url",
         "created_at",
         "updated_at",
         "finished_at",
     }
+    optionals: Set[str] = {"recebedor_nome", "observacao", "foto_url"}
     if not sb:
         _SESSION_COLUMNS_CACHE = columns
         return columns
@@ -71,6 +101,8 @@ def _session_columns(sb) -> Set[str]:
             "SUPABASE_DELIVERY_ERROR action=discover_session_columns table=%s",
             DELIVERY_SESSIONS_TABLE,
         )
+    if optionals:
+        columns.update(_probe_optional_columns(sb, DELIVERY_SESSIONS_TABLE, optionals))
     _SESSION_COLUMNS_CACHE = columns
     return columns
 
@@ -87,10 +119,9 @@ def _deliveries_columns(sb) -> Set[str]:
         "recebedor_nome",
         "observacao",
         "foto_path",
-        "foto_url",
-        "itens_mencionados",
         "created_at",
     }
+    optionals: Set[str] = {"foto_url", "itens_mencionados", "updated_at", "finished_at", "foto_media_id"}
     if not sb:
         _DELIVERIES_COLUMNS_CACHE = columns
         return columns
@@ -106,6 +137,8 @@ def _deliveries_columns(sb) -> Set[str]:
             "SUPABASE_DELIVERY_ERROR action=discover_deliveries_columns table=%s",
             DELIVERIES_TABLE,
         )
+    if optionals:
+        columns.update(_probe_optional_columns(sb, DELIVERIES_TABLE, optionals))
     _DELIVERIES_COLUMNS_CACHE = columns
     return columns
 
@@ -332,17 +365,22 @@ def upload_to_storage(
     content_type: str,
     client=None,
 ) -> Dict[str, Any]:
+    raw_path = str(object_path or "").strip().lstrip("/")
+    bucket_prefix = f"{bucket.strip('/')}/" if bucket else ""
+    while bucket_prefix and raw_path.startswith(bucket_prefix):
+        raw_path = raw_path[len(bucket_prefix) :]
+    normalized_path = raw_path
+
     bytes_len = len(content_bytes) if content_bytes is not None else 0
     file_options = {
         "content-type": content_type or "application/octet-stream",
-        "upsert": True,
+        "upsert": "true",
     }
     logger.info(
-        "DELIVERY_STORAGE_CALL bucket=%s path=%s bytes_len=%s upsert=%s",
+        "DELIVERY_STORAGE_UPLOAD bucket=%s path=%s bytes_len=%s",
         bucket,
-        object_path,
+        normalized_path,
         bytes_len,
-        file_options.get("upsert"),
     )
     sb = _client(client)
     if not sb:
@@ -350,7 +388,7 @@ def upload_to_storage(
         logger.error(
             "SUPABASE_STORAGE_ERROR action=upload bucket=%s path=%s error=%s",
             bucket,
-            object_path,
+            normalized_path,
             error_msg,
         )
         return {"ok": False, "error": error_msg, "raw": None}
@@ -359,23 +397,38 @@ def upload_to_storage(
         logger.error(
             "SUPABASE_STORAGE_ERROR action=upload bucket=%s path=%s error=%s",
             bucket,
-            object_path,
+            normalized_path,
             error_msg,
         )
         return {"ok": False, "error": error_msg, "raw": None}
 
     storage_client = sb.storage.from_(bucket)
     try:
-        response = storage_client.upload(object_path, content_bytes, file_options=cast(Any, file_options))
+        response = storage_client.upload(normalized_path, content_bytes, file_options=cast(Any, file_options))
     except Exception as exc:
         logger.exception(
             "SUPABASE_STORAGE_ERROR action=upload bucket=%s path=%s",
             bucket,
-            object_path,
+            normalized_path,
         )
         return {"ok": False, "error": str(exc), "raw": getattr(exc, "__dict__", None)}
 
-    return {"ok": True, "error": None, "raw": response}
+    if isinstance(response, dict) and response.get("error"):
+        error_detail = str(response.get("error"))
+        logger.error(
+            "SUPABASE_STORAGE_ERROR action=upload bucket=%s path=%s error=%s",
+            bucket,
+            normalized_path,
+            error_detail,
+        )
+        return {"ok": False, "error": error_detail, "raw": response}
+
+    logger.info(
+        "DELIVERY_STORAGE_UPLOAD_OK bucket=%s path=%s",
+        bucket,
+        normalized_path,
+    )
+    return {"ok": True, "error": None, "raw": response, "path": normalized_path}
 
 
 def upload_delivery_photo(

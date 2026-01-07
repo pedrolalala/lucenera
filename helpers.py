@@ -192,8 +192,12 @@ def _team_is_active(telefone: str, window_minutes: int = 12) -> bool:
     if not telefone:
         return False
     try:
-        from supabase_client import supabase  # lazy import
+        from supabase_client import get_supabase_client  # lazy import
     except Exception:
+        return False
+
+    supabase = get_supabase_client()
+    if supabase is None:
         return False
 
     table = os.getenv("TABLE", "mensagens")

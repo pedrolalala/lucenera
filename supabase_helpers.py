@@ -1,12 +1,14 @@
 # supabase_helpers.py
 import os
 from typing import Optional
-from supabase_client import supabase
+
+from supabase_client import get_supabase_client
 
 TABLE = "mensagens"
 ID_COLUMN = "id"
 
 def _sb_insert(payload: dict) -> Optional[dict]:
+    supabase = get_supabase_client()
     if not supabase:
         return None
     try:
@@ -18,6 +20,7 @@ def _sb_insert(payload: dict) -> Optional[dict]:
         return None
 
 def _sb_update(id_val, fields: dict) -> Optional[dict]:
+    supabase = get_supabase_client()
     if not supabase:
         return None
     try:

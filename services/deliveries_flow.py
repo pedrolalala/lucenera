@@ -373,6 +373,12 @@ def handle_event(
         media_url = media_url_raw.strip() if isinstance(media_url_raw, str) else None
         media_id = media_id_raw.strip() if isinstance(media_id_raw, str) else None
         has_photo = bool((media_url or "").strip() or (media_id or "").strip())
+        logger.info(
+            "DELIVERY_MEDIA_IDENTIFIED phone=%s media_id=%s media_url_present=%s",
+            phone_norm,
+            media_id or "-",
+            bool(media_url),
+        )
         if not has_photo:
             return TEXT_NEED_PHOTO
         object_path = _build_photo_path(obra_codigo, phone_norm)
@@ -382,6 +388,27 @@ def handle_event(
             media_context["media_url"] = media_url
         if media_id and "media_id" not in media_context:
             media_context["media_id"] = media_id
+
+        pre_update: Dict[str, Any] = {}
+        if media_id or media_url:
+            pre_update["foto_media_id"] = media_id or media_url
+        if media_url:
+            pre_update["foto_url"] = media_url
+        if pre_update:
+            try:
+                update_delivery_session(session_id, pre_update, supabase_client)
+            except Exception:
+                logger.warning(
+                    "DELIVERY_PHOTO_PREUPDATE_FAIL phone=%s session_id=%s",
+                    phone_norm,
+                    session_id,
+                )
+        logger.info(
+            "DELIVERY_MEDIA_DOWNLOAD_ATTEMPT phone=%s media_id=%s media_url=%s",
+            phone_norm,
+            media_id or "-",
+            media_url or "-",
+        )
         try:
             media_bytes, media_content_type = download_media_bytes(media_context)
         except Exception:
@@ -394,7 +421,7 @@ def handle_event(
             return TEXT_DOWNLOAD_FAIL
         bytes_len = len(media_bytes)
         logger.info(
-            "DELIVERY_PHOTO_DOWNLOAD_OK phone=%s bytes=%s content_type=%s",
+            "DELIVERY_MEDIA_DOWNLOAD_OK phone=%s bytes_len=%s content_type=%s",
             phone_norm,
             bytes_len,
             (media_content_type or "-")[:200],
@@ -415,22 +442,26 @@ def handle_event(
                 content_type=content_type,
                 client=supabase_client,
             )
-            if not upload_result or not upload_result.get("ok"):
-                error_detail = (upload_result or {}).get("error") or "upload failed"
-                raise RuntimeError(error_detail)
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "DELIVERY_UPLOAD_FAIL bucket=%s path=%s error=%s",
+                "DELIVERY_UPLOAD_EXCEPTION bucket=%s path=%s",
                 DELIVERY_STORAGE_BUCKET,
                 object_path,
-                exc,
             )
             return TEXT_UPLOAD_FAIL
+
+        upload_ok = bool(upload_result and upload_result.get("ok"))
+        upload_error = (upload_result or {}).get("error") if upload_result else "upload failed"
         logger.info(
-            "DELIVERY_UPLOAD_OK bucket=%s path=%s",
+            "DELIVERY_UPLOAD_RESULT bucket=%s path=%s ok=%s error=%s",
             DELIVERY_STORAGE_BUCKET,
-            object_path,
+            (upload_result or {}).get("path") or object_path,
+            upload_ok,
+            upload_error or "-",
         )
+        if not upload_ok:
+            return TEXT_UPLOAD_FAIL
+
         foto_url_signed = None
         try:
             foto_url_signed = create_signed_url(
@@ -451,7 +482,9 @@ def handle_event(
             "foto_media_id": media_id or media_url,
             "foto_path": object_path,
         }
-        if foto_url_signed:
+        if media_url:
+            update_fields.setdefault("foto_url", media_url)
+        if not media_url and foto_url_signed:
             update_fields["foto_url"] = foto_url_signed
         try:
             updated = update_delivery_session(session_id, update_fields, supabase_client)

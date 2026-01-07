@@ -1,7 +1,8 @@
 # supabase_repo.py
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any
-from supabase_client import supabase
+from typing import Any, Dict, List, Optional
+
+from supabase_client import get_supabase_client
 
 TABLE = "whatsapp_messages"
 
@@ -43,7 +44,10 @@ def save_inbound_message(
     }
     # remove chaves None para não conflitar com políticas
     payload = {k: v for k, v in payload.items() if v is not None}
-    resp = supabase.table(TABLE).insert(payload).execute()
+    client = get_supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase indisponível para salvar mensagem inbound")
+    resp = client.table(TABLE).insert(payload).execute()
     return (resp.data or [None])[0]
 
 def save_outbound_result(row_id, final_out: str, sent: bool, *, error: Optional[str] = None, approval_mode: bool = False):
@@ -51,7 +55,10 @@ def save_outbound_result(row_id, final_out: str, sent: bool, *, error: Optional[
     Atualiza a linha com a saída final (igual ao que seu app.py faz no fluxo normal).
     """
     status_val = "sent" if sent else ("awaiting_approval" if approval_mode else "error")
-    resp = (supabase.table(TABLE)
+    client = get_supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase indisponível para atualizar mensagem outbound")
+    resp = (client.table(TABLE)
             .update({
                 "final_out": final_out,
                 "used_ai": True,
@@ -70,7 +77,10 @@ def get_history_direct(telefone: str, days: int = 14, limit: int = 200) -> List[
     preenche 'final_out' na mesma linha.
     """
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    rows = (supabase.table(TABLE)
+    client = get_supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase indisponível para consultar histórico direto")
+    rows = (client.table(TABLE)
             .select("*")
             .eq("telefone", telefone)
             .gte("data", _iso(since))
@@ -100,7 +110,10 @@ def get_history_group(group_id: str, days: int = 14, limit: int = 300) -> List[D
     Histórico de um grupo (ID do grupo), últimos N dias, do mais antigo para o mais novo.
     """
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    rows = (supabase.table(TABLE)
+    client = get_supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase indisponível para consultar histórico de grupo")
+    rows = (client.table(TABLE)
             .select("*")
             .eq("group_id", group_id)
             .gte("data", _iso(since))

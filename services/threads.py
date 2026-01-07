@@ -6,9 +6,9 @@ from typing import Optional, Dict
 
 # Tenta importar o supabase do seu projeto (se existir)
 try:
-    from supabase_client import supabase  # seu arquivo já existe na raiz
-except Exception:
-    supabase = None
+    from supabase_client import get_supabase_client  # seu arquivo já existe na raiz
+except Exception:  # pragma: no cover - fallback em ambientes sem supabase
+    get_supabase_client = lambda: None  # type: ignore[assignment]
 
 from services.openai_helpers import cliente
 
@@ -25,6 +25,7 @@ def get_or_create_thread_id(chave: Optional[str]) -> str:
     chave = str(chave)
 
     # 1) tenta Supabase
+    supabase = get_supabase_client()
     if supabase:
         try:
             res = (supabase.table(TABLE)

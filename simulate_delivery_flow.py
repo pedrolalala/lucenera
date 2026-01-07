@@ -2,13 +2,16 @@
 
 import json
 
-from supabase_client import supabase
+from supabase_client import get_supabase_client
 from services.deliveries_flow import handle_event
 
 PHONE = "5516992089829"
 
 
 def snapshot(label: str) -> None:
+    supabase = get_supabase_client()
+    if supabase is None:
+        raise RuntimeError("Supabase client indisponível para snapshot")
     resp = (
         supabase
         .table("delivery_sessions")
@@ -22,6 +25,9 @@ def snapshot(label: str) -> None:
 
 
 def run() -> None:
+    supabase = get_supabase_client()
+    if supabase is None:
+        raise RuntimeError("Supabase client indisponível para simulação")
     start_event = {"telefone": PHONE, "mensagem": {"text": "Entrega finalizada"}}
     reply1 = handle_event(start_event, PHONE, raw_event=start_event, supabase_client=supabase)
     print("reply_start:", reply1)

@@ -9,11 +9,12 @@ import json
 import sys
 
 try:
-    from supabase_client import supabase, DEFAULT_TABLE, DEFAULT_IDCOL
+    from supabase_client import get_supabase_client, DEFAULT_TABLE, DEFAULT_IDCOL
 except Exception as e:
     print("ERROR: cannot import supabase_client:", e)
     sys.exit(2)
 
+supabase = get_supabase_client()
 if supabase is None:
     print("ERROR: supabase client not configured in .env")
     sys.exit(2)
