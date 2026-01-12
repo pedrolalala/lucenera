@@ -1,205 +1,5 @@
     # -*- coding: utf-8 -*-
-from __future__ import annotations
-from time import sleep
-from helpers import *
-import os, json, uuid, time, threading, logging, unicodedata, re
-import platform, subprocess  # para matar ngrok e fortalecer autostart
-from datetime import datetime, timezone, timedelta
-try:
-        from zoneinfo import ZoneInfo  # Python 3.9+
-except Exception:
-        ZoneInfo = None
-from pathlib import Path
-from typing import Optional, Dict, Any, List, Tuple, Sequence
-
-from dotenv import load_dotenv, find_dotenv
-from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
-import requests  # Teams, ngrok, Z-API
-
-# =========================
-# BOOT .env (antes de qualquer os.getenv)
-# =========================
-BASE_DIR = Path(__file__).resolve().parent
-DOTENV_PATH = find_dotenv()
-load_dotenv(DOTENV_PATH or (BASE_DIR / ".env"))
-load_dotenv(BASE_DIR / ".env")
-print(f">> .env carregado de: {DOTENV_PATH or '(não encontrado)'}", flush=True)
-
-    # === OpenAI/serviços
-from services.openai_helpers import (
-        cliente,
-        executar_assistente_e_aguardar,
-        enrich_row_with_media_text,  # pré-processamento de mídia
-    )
-from services.tools_runner import on_requires_action_runner
-from services.threads import get_or_create_thread_id
-from assistente_lucenera import pegar_json
-from selecionar_persona import selecionar_persona
-from selecionar_documento import selecionar_contexto
-from services.zapi_client import send_text_from_row, send_text_to
-import re, unicodedata, time
-from datetime import datetime, timedelta, timezone
-# === Equipes / contatos internos (uso interno; não expor ao cliente)
-from services.config_equipes import (
-    EQUIPES,
-    EQUIPES_AUG,
-    INTERNAL_WHATS,
-    decidir_canal_teams_from_row,
-    get_teams_webhook_for_channel,
-    extrair_intencao_financeiro,
-    extrair_intencao_estoque,
-)
-
-
-GREETINGS_RE = re.compile(
-    r"^(oi|ol[aá]|e?ai|boa\s?(tarde|noite|dia)|td ?bem|tudo ?bem|beleza|blz|como vai)[\s\W]*$",
-    re.I
-)
-FOLLOWUP_RE = re.compile(
-    r"\b(deu certo|e (ai|a[ií])\?|como ficou|conseguiu|e sobre|e aquela|e o? que|tem novidade|me fala|me retorna|resposta|atualiza)\b",
-    re.I
-)
-LOGISTICA_RE = re.compile(
-    r"\b(entrega|prazo|rastrea|instala[cç][aã]o|retirada|nota\s*fiscal|nf|troca|devolu[cç][aã]o|garantia|led|driver|spot|lumin[aá]ria)\b",
-    re.I
-)
-# === Smalltalk (cortesia/ack/reciprocidade) ===
-ACK_RE = re.compile(r"\b(obrigad[aoa]|valeu|perfeito|ótimo|otimo|combinado|ok(?:ay)?)\b", re.I)
-RECIPROCIDADE_RE = re.compile(r"\b(tudo|td)\s*(bem|bom)\s*(e\s*voc[eê])\b", re.I)
-
-def is_ack(txt: str) -> bool:
-    return bool(ACK_RE.search(_norm(txt)))
-
-def is_reciprocidade(txt: str) -> bool:
-    return bool(RECIPROCIDADE_RE.search(_norm(txt)))
-
-def _norm(s: str) -> str:
-    s = s or ""
-    s = unicodedata.normalize("NFKD", s).encode("ascii","ignore").decode("ascii")
-    return re.sub(r"\s+", " ", s).strip().lower()
-
-def is_greeting(txt: str) -> bool:
-    t = _norm(txt)
-    return len(t) <= 30 and bool(GREETINGS_RE.match(t))
-
-def is_followup(txt: str) -> bool:
-    t = _norm(txt)
-    return bool(FOLLOWUP_RE.search(t))
-
-def is_logistica(txt: str) -> bool:
-    return bool(LOGISTICA_RE.search(_norm(txt)))
-
-# parâmetros (acima de processar_inline)
-CONTEXT_WARM_MIN = int(os.getenv("CONTEXT_WARM_MIN", "3"))
-CONTEXT_LOOKBACK_MSGS = int(os.getenv("CONTEXT_LOOKBACK_MSGS", "15"))
-
-_last_greeting_at: dict[str, float] = {}
-# ==== fim dos classificadores ====
-# =====================================================================
-# LOGGING
-# =====================================================================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler("app.log", encoding="utf-8"), logging.StreamHandler()],
-)
-log = logging.getLogger("werkzeug"); log.setLevel(logging.ERROR)
-APP_LOG = logging.getLogger("lucenera"); APP_LOG.setLevel(logging.INFO)
-# Dicionário global usado para travas por chat (controla concorrência)
-import threading
-_RUN_LOCKS: dict[str, threading.Lock] = {}
-
-# =====================================================================
-# Flask APP (precisa existir ANTES das rotas)
-# =====================================================================
-app = Flask(__name__, static_folder=str(BASE_DIR / "static"), template_folder=str(BASE_DIR / "templates"))
-app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", "25_000_000"))  # ~25MB
-UPLOAD_FOLDER = str(BASE_DIR / "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# =====================================================================
-# ENV / UTILS
-# =====================================================================
-def _clean_env(name: str) -> Optional[str]:
-    v = os.getenv(name)
-    if v is None: return None
-    return v.strip().strip('"').strip("'")
-
-def _to_bool(val, default=False) -> bool:
-    if val is None: return bool(default)
-    s = str(val).strip().lower()
-    if s in {"1","true","t","yes","y","on","sim"}: return True
-    if s in {"0","false","f","no","n","off","nao","não"}: return False
-    return bool(default)
-
-def _to_int(val, default=None) -> Optional[int]:
-    try: return int(val)
-    except Exception: return default
-
-def _now_iso() -> str:
-    """Retorna ISO no fuso de São Paulo; fallback para UTC."""
-    try:
-        if ZoneInfo:
-            return datetime.now(ZoneInfo("America/Sao_Paulo")).isoformat()
-    except Exception:
-        pass
-    return datetime.now(timezone.utc).isoformat()
-
-def _normalize_no_accent(s: str) -> str:
-    if not isinstance(s, str): return ""
-    s = s.lower().strip()
-    s = unicodedata.normalize("NFD", s)
-    return "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
-
-# Flags / conf
-APPROVAL_MODE = _to_bool(_clean_env("APPROVAL_MODE"), False)
-OUTGOING_ENABLED = _to_bool(_clean_env("OUTGOING_ENABLED"), False)
-FORCE_PROCESS_ALL_GROUPS = _to_bool(_clean_env("FORCE_PROCESS_ALL_GROUPS"), False)
-IGNORE_GROUPS = _to_bool(_clean_env("IGNORE_GROUPS"), False)
-PORT = int(_clean_env("PORT") or "5000")
-ALLOW_FROM_ME = _to_bool(_clean_env("ALLOW_FROM_ME"), False)
-# Habilita dica de smalltalk para IA (por .env ou default True)
-SMALLTALK_HINT = _to_bool(_clean_env("SMALLTALK_HINT"), True)
-
-# Janela de histórico que a IA enxerga (maior ajuda o tom contextual)
-CTX_HISTORY_LIMIT = _to_int(_clean_env("CTX_HISTORY_LIMIT"), 20) or 20
-if CTX_HISTORY_LIMIT <= 0:
-    CTX_HISTORY_LIMIT = 20  # fallback sensato
-
-
-    # ==== NÚMEROS BLOQUEADOS (não responder / não processar) ====
-# Pode sobrescrever por .env com:  BLOCKED_NUMBERS=5511991371513,5511999841405;5511991325496
-def _digits_only(s: str) -> str:
-    """Remove tudo que não for número (ex.: +, espaços, parênteses)."""
-    return "".join(ch for ch in (s or "") if ch.isdigit())
-
-_BLOCKED_FROM_ENV_RAW = os.getenv("BLOCKED_NUMBERS", "")
-
-_BLOCKED_DEFAULT = [
-    # Contatos externos bloqueados
-    "5511991371513",  # Bia Bueno
-    "5511999841405",  # outro informado
-    "5511991325496",  # Lá Lampe (X)
-    "5511945371200",
-    "554192893278",   # Matheus Klems
-    "555493635211",
-
-    # === Contatos internos da Lucenera (não responder IA) ===
-    "5516996454282",  # Marina
-    "5516996464282",  # Thairine
-    "5516997000842",  # Thais
-    "5516997000042",  # Mariane
-    "5516997702520",  # Katia
-]
-
-# Normaliza itens do .env (aceita vírgula ou ponto e vírgula)
-_BLOCKED_FROM_ENV = [
-    p.strip() for p in _BLOCKED_FROM_ENV_RAW.replace(";", ",").split(",") if p.strip()
-]
-
-# === Conjuntos normalizados (só dígitos) ===
-BLOCKED_DEFAULT_SET = {_digits_only(x) for x in _BLOCKED_DEFAULT if _digits_only(x)}
-BLOCKED_ENV_SET     = {_digits_only(x) for x in _BLOCKED_FROM_ENV if _digits_only(x)}
+from services.chatgpt_responder import gerar_resposta_com_chatgpt
 BLOCKED_INTERNAL    = {_digits_only(x) for x in (INTERNAL_WHATS or []) if _digits_only(x)}  # do config_equipes
 
 # Conjunto final para checagem rápida
@@ -245,69 +45,9 @@ def _row_is_from_me(row: dict) -> bool:
         if origem in {"bot", "human", "bot_api", "outgoing", "sent"}:
             return True
     except Exception:
-        return False
+        pass
 
     return False
-
-
-# =====================================================================
-# Debounce
-# =====================================================================
-DEBOUNCE_SECONDS = _to_int(_clean_env("DEBOUNCE_SECONDS"), 60) or 60
-DEBOUNCE_MAX_SECONDS = _to_int(_clean_env("DEBOUNCE_MAX_SECONDS"), 85) or 85
-
-_debounce_state: dict[str, dict] = {}
-_debounce_lock = threading.Lock()
-
-
-def _parse_iso_datetime(value: Optional[str]) -> Optional[datetime]:
-    if not value:
-        return None
-    try:
-        dt = datetime.fromisoformat(value)
-    except Exception:
-        return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def _safe_row_id(row: Optional[dict]) -> Optional[int]:
-    if not isinstance(row, dict):
-        return None
-    for key in (ID_COLUMN, "id", "id_num"):
-        val = row.get(key)
-        if val is None:
-            continue
-        try:
-            if isinstance(val, int):
-                return val
-            sval = str(val).strip()
-            if sval:
-                return int(float(sval))
-        except Exception:
-            continue
-    return None
-
-
-def _format_debounce_timestamp(row: dict) -> str:
-    meta = (row.get("mensagem") or {}).get("meta") or {}
-    for candidate in (
-        row.get("data"),
-        meta.get("timestamp_iso_sao_paulo"),
-        meta.get("timestamp_iso_utc"),
-    ):
-        dt = _parse_iso_datetime(candidate)
-        if dt:
-            try:
-                if ZoneInfo:
-                    dt = dt.astimezone(ZoneInfo("America/Sao_Paulo"))
-            except Exception:
-                pass
-            return dt.strftime("%H:%M")
-    return ""
-
-
 _MEDIA_PLACEHOLDERS = {
     "image": "[Imagem recebida]",
     "photo": "[Imagem recebida]",
@@ -1433,62 +1173,6 @@ def _formatar_resposta_julia_local(texto: str) -> str:
     s = s.rstrip(" !")
     return f"Julia. {s}"
 
-def _assistants_reply(chat_key: str, user_text: str, extra_instructions: Optional[str]) -> Tuple[str, Optional[str]]:
-    from openai import OpenAI
-    from openai import BadRequestError
-
-    def _load_ids(force_recreate: bool = False) -> tuple[str, str]:
-        if force_recreate:
-            try:
-                p = Path("assistente_lucenera.json")
-                if p.exists():
-                    p.unlink()
-            except Exception:
-                pass
-        ids = pegar_json() or {}
-        asst_id = ids.get("assistant_id") or os.getenv("ASSISTANT_ID_LUCENERA") or ""
-        if not asst_id:
-            raise RuntimeError("Defina ASSISTANT_ID_LUCENERA no .env ou deixe o pegar_json() criar.")
-        return asst_id, get_or_create_thread_id(chat_key)
-
-    assistant_id, thread_id = _load_ids(force_recreate=False)
-
-    try:
-        cliente.beta.threads.messages.create(thread_id=thread_id, role="user", content=user_text)
-    except Exception as e:
-        if "No thread" in str(e) or ("thread" in str(e).lower() and "not found" in str(e).lower()):
-            assistant_id, thread_id = _load_ids(force_recreate=True)
-            cliente.beta.threads.messages.create(thread_id=thread_id, role="user", content=user_text)
-        else:
-            raise
-
-    # Gera o run e aguarda a resposta
-    run = cliente.beta.threads.runs.create_and_poll(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        instructions=extra_instructions or "",
-        timeout=120
-    )
-
-    # Captura a última mensagem da IA
-    resposta = None
-    try:
-        mensagens = cliente.beta.threads.messages.list(thread_id=thread_id).data
-        for m in mensagens:
-            if m.role == "assistant":
-                try:
-                    resposta = m.content[0].text.value
-                    break
-                except Exception:
-                    continue
-    except Exception as e:
-        print(">> [ERRO] Falha ao buscar mensagens do assistente:", e, flush=True)
-
-    if not resposta:
-        print(">> [WARN] _assistants_reply: sem resposta do modelo.")
-        resposta = ""
-
-    return resposta, thread_id
 # Campos que não devem ser sobrescritos no Supabase
 NON_WRITABLE_COLS = {"is_group"}
 
@@ -2028,36 +1712,6 @@ def processar_inline(row: dict) -> None:
             return int(os.getenv("CONTEXT_LOOKBACK_MSGS", "15"))
 
     # Runner efêmero: responde SÓ a última msg
-    def _assistants_reply_ephemeral(txt: str, extra_instructions: Optional[str] = None) -> Tuple[str, Optional[str]]:
-        assistant_id = os.getenv("OPENAI_ASSISTANT_ID") or os.getenv("ASSISTANT_ID") or os.getenv("ASSISTENTE_ID")
-        if not assistant_id:
-            raise RuntimeError("OPENAI_ASSISTANT_ID ausente no .env")
-
-        th = cliente.beta.threads.create(messages=[{"role": "user", "content": txt}])
-
-        add_instr = (
-            "Responda exclusivamente à ÚLTIMA mensagem do usuário. "
-            "Não utilize contexto anterior. "
-            "Se a pergunta for vaga, faça UMA pergunta objetiva e seja humano."
-        )
-        if extra_instructions:
-            add_instr += "\n\n" + str(extra_instructions)
-
-        executar_assistente_e_aguardar(
-            assistant_id=assistant_id,
-            thread_id=th.id,
-            instructions=add_instr,
-            timeout_s=120,
-            on_requires_action=on_requires_action_runner,
-        )
-
-        msg = cliente.beta.threads.messages.list(thread_id=th.id).data[0]
-        try:
-            txt_resp = msg.content[0].text.value
-        except Exception:
-            txt_resp = (msg.get("content") or [{}])[0].get("text", {}).get("value", "") if isinstance(msg, dict) else ""
-        return (txt_resp or "").strip(), th.id
-
     # Histórico curto (fallback quando _fetch_recent_texts_for_chat não existir)
     def _fetch_recent_history_for_dm(telefone: str, limit: int) -> List[dict]:
         try:
@@ -2379,72 +2033,56 @@ def processar_inline(row: dict) -> None:
                         history_lines.append(f"{role}: {content}")
             history_block = "\n".join(history_lines) if history_lines else None
 
-        APP_LOG.info("historico DM | tel=%s | mode=%s | fetched=%d | limit=%d | before_id=%s",
-                     telefone, context_mode, len(history_lines or []), CTX_HISTORY_LIMIT, row_id)
+        APP_LOG.info(
+            "historico DM | tel=%s | mode=%s | fetched=%d | limit=%d | before_id=%s",
+            telefone,
+            context_mode,
+            len(history_lines or []),
+            CTX_HISTORY_LIMIT,
+            row_id,
+        )
 
-        # Monta instruções
+        # Geração da resposta via ChatGPT centralizado
         chat_key = f"phone:{telefone}" if telefone else f"anon:{row_id}"
-        instructions = _build_instructions_for_row(row, history_block)
+        user_identifier = telefone or chat_key
 
-        # Passo IA — protegido por lock por chat
         try:
-            # garante o dicionário global de locks
             if '_RUN_LOCKS' not in globals():
                 from collections import defaultdict
                 globals()['_RUN_LOCKS'] = defaultdict(threading.Lock)
 
-            lock_key = chat_key
-            lock = _RUN_LOCKS[lock_key]
+            lock = _RUN_LOCKS[chat_key]
             with lock:
-                if context_mode == "LAST_ONLY":
-                    extra_instr = "Priorize objetividade e tom humano. Se a dúvida for vaga, faça 1 pergunta objetiva."
-                    if SMALLTALK_HINT and smalltalk:
-                        extra_instr += "\n\n" + smalltalk_hint
-                    resposta, thread_id = _assistants_reply_ephemeral(txt, extra_instructions=extra_instr)
-                else:
-                    if SMALLTALK_HINT and smalltalk:
-                        instructions = (instructions or "") + "\n\n[INTENCAO]\n" + smalltalk_hint
-                    resposta, thread_id = _assistants_reply(chat_key, txt, instructions)
-        except Exception as e_ephem:
-            print(">> aviso: runner falhou, usando runner padrão. Motivo:", e_ephem, flush=True)
-            resposta, thread_id = _assistants_reply(chat_key, txt, instructions)
-
-        # Pós-processamento de comportamento (gerente de projetos)
-        from services.openai_helpers import _apply_manager_policies
-
-
-        resposta = _apply_manager_policies(txt, resposta)
-        if not resposta:
+                resposta = gerar_resposta_com_chatgpt(txt, user_identifier)
+        except Exception as exc:
+            print(">> erro: gerar_resposta_com_chatgpt falhou:", exc, flush=True)
             _supabase_update_safe(row_id, {
-                "status": "ignored_finalize",
+                "status": "error",
                 "used_ai": False,
-                "ai_draft": None
+                "ai_draft": None,
+                "error": f"ChatGPT falhou: {exc}"
             })
-            _teams_notify_log(row, title="✅ Sem resposta necessária (finalizador ou cortesia)", status_tag="ignored_finalize")
+            _teams_notify_log(row, title="⚠️ Falha ao gerar resposta — log", status_tag="ai_error")
             return
-    
-    
 
-        # Pós-processamento
-        resposta = _strip_filler_phrases(resposta or "")
-        if not resposta.strip() or resposta.strip().lower() == "julia.":
+        if not resposta or not resposta.strip():
             _supabase_update_safe(row_id, {
-                "ai_draft": None, "used_ai": False, "status": "ignored_empty_ai",
-                "error": "Resposta esvaziada por pós-processamento."
+                "status": "ignored_empty_ai",
+                "used_ai": False,
+                "ai_draft": None,
+                "error": "ChatGPT retornou vazio"
             })
-            _teams_notify_log(row, title="🧹 Resposta vazia após limpeza — log", status_tag="ignored_empty_ai")
+            _teams_notify_log(row, title="🧹 Resposta vazia — log", status_tag="ignored_empty_ai")
             return
 
-        rsp = resposta.strip()
-        if not rsp.lower().startswith("julia."):
-            rsp = f"Julia. {rsp.lstrip()}"
-        resposta = rsp.replace("..", ".")
-
-        if needs_clarify:
-            prefixo = clarify_hint or "Consegue me confirmar o modelo/código ou enviar uma foto para eu validar direitinho?"
-            resposta = f"{prefixo}\n\n{resposta}".strip()
-
-        analysis_obj = {"chat_key": chat_key, "used_tools": True, "inline": True, "route": route, "context_mode": context_mode}
+        analysis_obj = {
+            "chat_key": chat_key,
+            "route": route,
+            "context_mode": context_mode,
+            "generator": "chatgpt",
+            "history_source": "conversas",
+            "used_tools": False,
+        }
 
         # Saída
         if APPROVAL_MODE:
@@ -2457,7 +2095,7 @@ def processar_inline(row: dict) -> None:
 
             _supabase_update_safe(row_id, {
                 "ai_draft": ai_for_client, "status": "awaiting_approval", "used_ai": True,
-                "error": None, "thread_id": thread_id, "analysis": analysis_obj
+                "error": None, "analysis": analysis_obj
             })
 
             # Sempre enviar o card de aprovação para o canal principal (projetos)
@@ -2506,7 +2144,7 @@ def processar_inline(row: dict) -> None:
             if sent_ok:
                 _supabase_update_safe(row_id, {
                     "final_out": to_send, "status": "sent", "used_ai": True,
-                    "approved": True, "error": None, "thread_id": thread_id,
+                    "approved": True, "error": None,
                     "analysis": analysis_obj
                 })
                 _teams_notify_log(row, title="📤 Enviado (auto) — log", status_tag="sent")
@@ -2536,7 +2174,7 @@ def processar_inline(row: dict) -> None:
                     "status": ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
                     "used_ai": True, "approved": False,
                     "error": (None if not OUTGOING_ENABLED else "Falha no envio WhatsApp"),
-                    "thread_id": thread_id, "analysis": analysis_obj
+                    "analysis": analysis_obj
                 })
                 _teams_notify_log(
                     row,

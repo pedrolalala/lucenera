@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # tasks.py
-# Celery worker para processar mensagens (Lucenera) usando OpenAI Assistants v2.
+# Celery worker para processar mensagens (Lucenera) gerando rascunhos via ChatGPT.
 # - Lê a mensagem (row ou row_id)
-# - Cria/usa uma Thread por chat (grupo/contato)
-# - Executa o Assistant (com function calling via on_requires_action_runner)
+# - Consulta histórico e prompts na função centralizada gerar_resposta_com_chatgpt
 # - Gera um rascunho (ai_draft) padronizado "Julia."
 # - Salva no Supabase como "awaiting_approval" (ou envia automaticamente se habilitado)
 
@@ -32,27 +31,16 @@ logging.basicConfig(
 )
 log = logging.getLogger("tasks")
 
-# ========= OpenAI / Assistants =========
-from services.openai_helpers import (
-    cliente,
-    formatar_resposta_julia,
-    aguardar_run,
-)
-from services.tools_runner import on_requires_action_runner
-from services.threads import get_or_create_thread_id
+# ========= Resposta automatizada =========
+from services.chatgpt_responder import gerar_resposta_com_chatgpt
 from services.entregas_pdf import parse_separacao_pdf
 from services.entregas_agenda import calcular_nivel
-
-# ========= Regras e contexto (opcionais) =========
-from selecionar_persona import selecionar_persona
-from selecionar_documento import selecionar_contexto
 
 # ========= Supabase =========
 from supabase_client import get_supabase_client
 from supabase_helpers import _sb_update, _get_row_id
 
 # ========= App/Fluxo =========
-ASSISTANT_ID = os.getenv("ASSISTANT_ID_LUCENERA") or ""  # obrigatório para Assistants
 APPROVAL_REQUIRED = (os.getenv("APPROVAL_REQUIRED", "true").lower() == "true")
 AUTO_SEND_WHATSAPP = (os.getenv("AUTO_SEND_WHATSAPP", "false").lower() == "true") and (not APPROVAL_REQUIRED)
 
@@ -134,42 +122,6 @@ def _row_chat_key(row: Dict[str, Any]) -> str:
     return f"anon:{row.get('id') or time.time()}"
 
 
-def _montar_instructions(row: Dict[str, Any]) -> Optional[str]:
-    """
-    (Opcional) Injeta instruções dinâmicas com base em persona/documento.
-    Se preferir, retorne None para usar só as Instruções do Assistant.
-    """
-    try:
-        in_group = bool(row.get("in_group"))
-        group_name = str(row.get("group_name") or "").strip()
-        sender_name = str(row.get("sender_name") or row.get("nome") or "").strip()
-
-        persona = selecionar_persona(
-            origem="whatsapp",
-            grupo=group_name if in_group else "",
-            remetente=sender_name,
-        )
-        contexto = selecionar_contexto(row)  # seu seletor pode ler projeto/aba/arquivo do SharePoint/Excel
-
-        # Esqueleto simples — ajuste conforme preferir
-        partes = []
-        if persona:
-            partes.append(f"[PERSONA]\n{json.dumps(persona, ensure_ascii=False)}")
-        if contexto:
-            partes.append(f"[CONTEXTO]\n{json.dumps(contexto, ensure_ascii=False)}")
-        partes.append(
-            "[REGRAS]\n"
-            "- Responda com dados reais do contexto (SharePoint/Excel/Supabase) quando existirem.\n"
-            "- Se faltar dado, faça só 1 pergunta objetiva.\n"
-            "- Seja breve, direto e profissional. Não invente.\n"
-            "- Formate a resposta curta para WhatsApp.\n"
-        )
-        return "\n\n".join(partes)
-    except Exception as e:
-        log.warning(f"Falha ao montar instructions dinâmicas: {e}")
-        return None
-
-
 def _atualizar_ai_draft_e_status(row_id: Union[int, str], draft: str, status: str, extras: Optional[Dict[str, Any]] = None):
     data = {"ai_draft": draft, "status": status}
     if extras:
@@ -179,25 +131,6 @@ def _atualizar_ai_draft_e_status(row_id: Union[int, str], draft: str, status: st
         log.info(f"mensagens[{row_id}] atualizado: status={status}")
     except Exception as e:
         log.exception(f"Falha ao atualizar mensagens[{row_id}]: {e}")
-
-
-def _criar_run_e_aguardar(assistant_id: str, thread_id: str, instructions: Optional[str]) -> str:
-    """
-    Adiciona a tool-run handler (on_requires_action_runner) e aguarda conclusão.
-    Retorna o texto final do assistente (ou vazio).
-    """
-    run = cliente.beta.threads.runs.create(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        instructions=instructions,
-    )
-    texto = aguardar_run(
-        thread_id,
-        run,
-        timeout_s=int(os.getenv("ASSISTANTS_TIMEOUT_S", "90")),
-        on_requires_action=on_requires_action_runner,  # <- IMPORTANTE: habilita as tools
-    )
-    return texto or ""
 
 
 # --------------------------------------------------------------------------------------
@@ -210,9 +143,6 @@ def processar_mensagem(self, row_or_id: Union[Dict[str, Any], int, str]) -> Dict
     row_or_id: pode ser o dict da linha ou apenas o id.
     Retorna um resumo do processamento.
     """
-    if not ASSISTANT_ID:
-        raise RuntimeError("Defina ASSISTANT_ID_LUCENERA no .env")
-
     # 1) Carrega row
     if isinstance(row_or_id, (int, str)):
         row_id = _get_row_id(row_or_id)  # normaliza para int
@@ -233,35 +163,23 @@ def processar_mensagem(self, row_or_id: Union[Dict[str, Any], int, str]) -> Dict
 
     chat_key = _row_chat_key(row)
 
-    # 3) Thread por chat
-    thread_id = get_or_create_thread_id(chat_key)
-
-    # 4) Injeta mensagem do usuário na thread
+    # 3) Gera resposta centralizada via ChatGPT
+    user_identifier = row.get("user_id") or row.get("telefone") or row.get("from") or str(chat_key)
     try:
-        cliente.beta.threads.messages.create(
-            thread_id=thread_id,
-            role="user",
-            content=texto_usuario
-        )
-    except Exception as e:
-        log.exception(f"Falha ao criar mensagem na thread {thread_id}: {e}")
+        resposta = gerar_resposta_com_chatgpt(texto_usuario, str(user_identifier))
+    except Exception as exc:
+        log.exception(f"Falha ao gerar resposta ChatGPT para chat_key={chat_key}: {exc}")
+        _atualizar_ai_draft_e_status(row_id, "", "error", {"error": f"chatgpt_error: {exc}"})
         raise
-
-    # 5) Instruções dinâmicas (opcional)
-    instructions = _montar_instructions(row)
-
-    # 6) Executa Assistant e aguarda (com tools)
-    texto = _criar_run_e_aguardar(ASSISTANT_ID, thread_id, instructions)
-    resposta = formatar_resposta_julia(texto)
 
     # 7) Atualiza Supabase
     extras = {
-        "thread_id": thread_id,
-        "assistant_id": ASSISTANT_ID,
         "analysis": json.dumps({
             "chat_key": chat_key,
-            "used_tools": True,
+            "used_tools": False,
             "inline": False,
+            "generator": "chatgpt",
+            "history_source": "conversas",
         }, ensure_ascii=False)
     }
 
@@ -284,8 +202,6 @@ def processar_mensagem(self, row_or_id: Union[Dict[str, Any], int, str]) -> Dict
     return {
         "ok": True,
         "row_id": row_id,
-        "thread_id": thread_id,
-        "assistant_id": ASSISTANT_ID,
         "status": status,
         "sent": sent,
     }
