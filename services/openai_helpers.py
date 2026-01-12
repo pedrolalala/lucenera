@@ -454,7 +454,7 @@ def _apply_manager_policies(msg_cliente: str, ai_texto: str) -> str:
     if not draft:
         # Se for relacionado a vídeo/mídia -> usar resposta de análise de vídeo
         if "vídeo" in mc or "video" in mc or "anexo" in mc:
-            return "Vou analisar o vídeo e trago as observações necessárias em breve"
+            return "Já te retorno com as observações em breve"
 
         # Palavras que indicam necessidade de checar com equipe/fornecedor
         needs_check_keywords = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]

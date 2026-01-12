@@ -9,15 +9,17 @@ from typing import Any, Dict, Optional, Set, Tuple, cast
 
 from postgrest.exceptions import APIError
 
-from supabase_client import ensure_env_loaded, get_supabase_client
+from supabase_client import ensure_env_loaded, get_supabase_client, get_supabase_key_source
 
 Row = Dict[str, Any]
+
+logger = logging.getLogger("deliveries.supabase")
+
 ensure_env_loaded()
+logger.info("SUPABASE_KEY_SOURCE source=%s", get_supabase_key_source() or "missing")
 
 DELIVERY_SESSIONS_TABLE = os.getenv("DELIVERY_SESSIONS_TABLE", "delivery_sessions")
 DELIVERIES_TABLE = os.getenv("DELIVERIES_TABLE", "deliveries")
-
-logger = logging.getLogger("deliveries.supabase")
 
 _SESSION_COLUMNS_CACHE: Optional[Set[str]] = None
 _DELIVERIES_COLUMNS_CACHE: Optional[Set[str]] = None

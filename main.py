@@ -17,15 +17,6 @@ from dotenv import load_dotenv, find_dotenv
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
 import requests  # Teams, ngrok, Z-API
 
-# =========================
-# BOOT .env (antes de qualquer os.getenv)
-# =========================
-BASE_DIR = Path(__file__).resolve().parent
-DOTENV_PATH = find_dotenv()
-load_dotenv(DOTENV_PATH or (BASE_DIR / ".env"))
-load_dotenv(BASE_DIR / ".env")
-print(f">> .env carregado de: {DOTENV_PATH or '(não encontrado)'}", flush=True)
-
     # === OpenAI/serviços
 from services.openai_helpers import (
         cliente,
@@ -101,6 +92,16 @@ CONTEXT_LOOKBACK_MSGS = int(os.getenv("CONTEXT_LOOKBACK_MSGS", "15"))
 
 _last_greeting_at: dict[str, float] = {}
 # ==== fim dos classificadores ====
+
+    # =========================
+    # BOOT .env
+    # =========================
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(find_dotenv() or (BASE_DIR / ".env"))
+load_dotenv(BASE_DIR / ".env")
+DOTENV_PATH = find_dotenv()
+print(f">> .env carregado de: {DOTENV_PATH or '(não encontrado)'}", flush=True)
+
 # =====================================================================
 # LOGGING
 # =====================================================================
@@ -679,7 +680,8 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
         pass
 
     low_orig = (original_msg or "").lower()
-    return "Julia. Vou analisar o vídeo e trago as observações necessárias em breve"
+    if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
+        return "Julia. Já te retorno com as observações em breve"
 
     needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
     for k in needs_check:
@@ -696,20 +698,7 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
 # SUPABASE CLIENT
 # =====================================================================
 try:
-    from supabase_client import (
-        get_supabase_client,
-        column_exists as _supabase_column_exists,
-        supabase_diagnostics,
-    )
-    _sb_diag = supabase_diagnostics()
-    print(
-        ">> Supabase diag: url_present=%s url_prefix=%s key_present=%s key_prefix=%s",
-        _sb_diag["url_present"],
-        _sb_diag["url_prefix"],
-        _sb_diag["key_present"],
-        _sb_diag["key_prefix"],
-        flush=True,
-    )
+    from supabase_client import get_supabase_client, column_exists as _supabase_column_exists
     supabase = get_supabase_client()
     if supabase:
         print(">> Supabase client: OK", flush=True)
@@ -2130,15 +2119,22 @@ def _notify_delivery_teams(event_type: str, payload: Dict[str, Any]) -> None:
     if event_type == "start":
         text = f"📦 Inicio confirmacao de entrega - phone: {payload.get('phone') or '-'}"
     elif event_type == "finish":
-        text = (
-            "✅ Entrega finalizada - Projeto: {proj} | Endereco: {endereco} | Recebedor: {recebedor} | Obs: {obs} | Foto: {foto}".format(
-                proj=payload.get("projeto_numero") or "-",
-                endereco=payload.get("endereco") or "-",
-                recebedor=payload.get("recebedor_nome") or "-",
-                obs=payload.get("observacao") or "-",
-                foto=payload.get("foto_url") or "-",
-            )
-        )
+        codigo_projeto_raw = payload.get("codigo_projeto") or payload.get("obra_codigo") or payload.get("projeto_numero") or ""
+        recebedor_raw = payload.get("recebedor") or payload.get("recebedor_nome") or ""
+        observacao_raw = payload.get("observacao") or payload.get("obs") or ""
+        foto_url_raw = payload.get("url") or payload.get("foto_url") or ""
+
+        codigo_projeto = str(codigo_projeto_raw).strip() or "-"
+        recebedor = str(recebedor_raw).strip() or "-"
+        obs = str(observacao_raw).strip()
+        foto_url = str(foto_url_raw).strip()
+
+        message = f"✅ Entrega finalizada - Projeto: {codigo_projeto} | Recebedor: {recebedor}"
+        if obs and obs != "-":
+            message += f" | Obs: {obs}"
+        if foto_url:
+            message += f" | Foto: {foto_url}"
+        text = message
     else:
         text = f"Delivery event {event_type}: {payload}"
 

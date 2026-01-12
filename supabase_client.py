@@ -22,6 +22,7 @@ _CLIENT_LOCK = threading.Lock()
 _ENV_LOADED = False
 _SUPABASE_URL: Optional[str] = None
 _SUPABASE_KEY: Optional[str] = None
+_SUPABASE_KEY_SOURCE: Optional[str] = None
 DEFAULT_TABLE = "mensagens"
 DEFAULT_IDCOL = "id_num"
 supabase: Optional[Client] = None  # compat legado; use get_supabase_client()
@@ -42,7 +43,7 @@ def _clean_env(name: str) -> Optional[str]:
 
 
 def ensure_env_loaded() -> None:
-    global _ENV_LOADED, _SUPABASE_URL, _SUPABASE_KEY, DEFAULT_TABLE, DEFAULT_IDCOL
+    global _ENV_LOADED, _SUPABASE_URL, _SUPABASE_KEY, _SUPABASE_KEY_SOURCE, DEFAULT_TABLE, DEFAULT_IDCOL
     if _ENV_LOADED:
         return
     with _ENV_LOCK:
@@ -54,16 +55,23 @@ def ensure_env_loaded() -> None:
             load_dotenv(dotenv_path)
         load_dotenv(base_dir / ".env")
         _SUPABASE_URL = _clean_env("SUPABASE_URL")
-        key_a = _clean_env("SUPABASE_SERVICE_ROLE")
-        key_b = _clean_env("SUPABASE_SERVICE_ROLE_KEY")
-        _SUPABASE_KEY = key_a or key_b
+        key_value: Optional[str] = None
+        key_source: Optional[str] = None
+        for env_name in ("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE", "SUPABASE_KEY"):
+            candidate = _clean_env(env_name)
+            if candidate:
+                key_value = candidate
+                key_source = env_name
+                break
+        _SUPABASE_KEY = key_value
+        _SUPABASE_KEY_SOURCE = key_source
         DEFAULT_TABLE = _clean_env("TABLE") or DEFAULT_TABLE
         DEFAULT_IDCOL = _clean_env("ID_COLUMN") or DEFAULT_IDCOL
         _ENV_LOADED = True
         _LOGGER.info(
-            "SUPABASE_ENV_LOADED url_prefix=%s key_prefix=%s",
+            "SUPABASE_ENV_LOADED url_prefix=%s key_source=%s",
             _safe_prefix(_SUPABASE_URL, 24),
-            _safe_prefix(_SUPABASE_KEY, 12),
+            _SUPABASE_KEY_SOURCE or "missing",
         )
 
 
@@ -73,7 +81,7 @@ def _validate_config() -> None:
         raise RuntimeError("SUPABASE_URL não configurada. Defina no .env ou ambiente.")
     if not _SUPABASE_KEY:
         raise RuntimeError(
-            "Chave Supabase ausente. Configure SUPABASE_SERVICE_ROLE ou SUPABASE_SERVICE_ROLE_KEY."
+            "Chave Supabase ausente. Configure SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_ROLE ou SUPABASE_KEY."
         )
 
 
@@ -99,9 +107,9 @@ def get_supabase_client(force_refresh: bool = False) -> Optional[Client]:
             supabase = None
             return None
         _LOGGER.info(
-            "SUPABASE_CLIENT_READY url_prefix=%s key_prefix=%s",
+            "SUPABASE_CLIENT_READY url_prefix=%s key_source=%s",
             _safe_prefix(_SUPABASE_URL, 24),
-            _safe_prefix(_SUPABASE_KEY, 12),
+            _SUPABASE_KEY_SOURCE or "missing",
         )
     return supabase
 
@@ -110,9 +118,14 @@ def require_supabase_client(force_refresh: bool = False) -> Client:
     client = get_supabase_client(force_refresh=force_refresh)
     if client is None:
         raise RuntimeError(
-            "Supabase não configurado. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE ou SUPABASE_SERVICE_ROLE_KEY."
+            "Supabase não configurado. Defina SUPABASE_URL e uma chave em SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_ROLE ou SUPABASE_KEY."
         )
     return client
+
+
+def get_supabase_key_source() -> Optional[str]:
+    ensure_env_loaded()
+    return _SUPABASE_KEY_SOURCE
 
 
 def get_supabase() -> Optional[Client]:  # compatibilidade

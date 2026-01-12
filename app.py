@@ -640,7 +640,7 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
         pass
     low_orig = (original_msg or "").lower()
     if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
-        return "Julia. Vou analisar o vídeo e trago as observações necessárias em breve"
+        return "Julia. Já te retorno com as observações em breve"
     needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
     for k in needs_check:
         if k in low_orig:
