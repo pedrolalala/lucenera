@@ -42,6 +42,13 @@ app = Flask(
     static_folder=str(BASE_DIR / "static"),
 )
 log = logging.getLogger("werkzeug")
+APP_LOG = logging.getLogger("lucenera")
+APP_LOG.setLevel(logging.INFO)
+if not APP_LOG.handlers:
+    _handler = logging.StreamHandler()
+    _formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+    _handler.setFormatter(_formatter)
+    APP_LOG.addHandler(_handler)
 # === Equipes / contatos internos (uso interno; não expor ao cliente)
 from services.config_equipes import (
     EQUIPES,
