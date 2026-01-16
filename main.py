@@ -641,8 +641,8 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
     # Fallback: saudação curta e humana
     first = (sender_name or "").split()[0] if sender_name else ""
     if first:
-        return f"Julia. Oi {first}! Tudo ótimo, e você? Posso ajudar com algo agora?"
-    return "Julia. Oi! Tudo ótimo, e você? Posso ajudar com algo agora?"
+        return f"Julia. Oi {first}! Tudo ótimo, e você?"
+    return "Julia. Oi! Tudo ótimo, e você?"
 
 # =====================================================================
 # SUPABASE CLIENT

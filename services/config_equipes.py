@@ -150,9 +150,12 @@ _FINANCE_TERMS = {
     "pagamento", "pagamentos", "pagto", "pagamento antecipado", "pagamento parcial",
     "forma de pagamento", "formas de pagamento", "condicao", "condicoes", "condicao de pagamento",
     "sinal", "entrada", "adiantamento", "reserva", "parcela", "parcelas", "parcelamento",
-    "transferencia", "transferencias", "pix", "boleto", "boletos", "comprovante", "deposito",
-    "nota fiscal", "nf", "nfe", "faturamento", "pedido", "pedidos", "contrato", "contratos",
+    "transferencia", "transferencias", "pix", "pix recebido", "pix confirmado", "pix pendente",
+    "comprovante pix", "comprovante de pix", "chave pix", "copia e cola", "pix copia e cola",
+    "boleto", "boletos", "comprovante", "deposito", "nota fiscal", "nota de servico", "nota de serviço",
+    "nf", "nfe", "danfe", "faturamento", "pedido", "pedidos", "contrato", "contratos",
     "valor", "valores", "orcamento", "orcamentos", "proposta", "propostas", "aprovacao", "aprovacoes",
+    "cobranca", "cobrancas", "recebimento", "recebimentos",
 }
 
 _FINANCE_SALES_TERMS = {
@@ -171,6 +174,8 @@ _FINANCE_REGEX = [
     re.compile(r"nota\s+fiscal"),
     re.compile(r"nf\s*de\s*remessa"),
     re.compile(r"(?:fechou|fechar|fechada|fechado)\s+(?:a\s+)?(?:venda|negocio|contrato|proposta|pedido)"),
+    re.compile(r"chave\s+pix"),
+    re.compile(r"pix\s*(?:copia\s*e\s*cola|confirmado|recebido|agendado|pendente)?"),
 ]
 
 _ESTOQUE_TERMS = {
@@ -340,7 +345,7 @@ def decidir_canal_teams_from_row(row: dict, history_lines: Optional[Sequence[str
             v = analysis.get(k)
             if isinstance(v, str) and v.strip():
                 s = _normalize_text(v)
-                if any(p in s for p in ("adm", "admin", "administracao", "administrativo", "financeiro", "boleto", "pagamento", "fatura")):
+                if any(p in s for p in ("adm", "admin", "administracao", "administrativo", "financeiro", "boleto", "pagamento", "fatura", "pix", "chave pix")):
                     _log_routing("admin")
                     return "admin"
                 if any(p in s for p in ("estoque", "logistica", "logistico", "almoxarifado", "expedicao", "entrega")):
@@ -350,7 +355,7 @@ def decidir_canal_teams_from_row(row: dict, history_lines: Optional[Sequence[str
     # 2) tenta texto bruto
     if any(p in texto_norm for p in (
         "adm", "admin", "administracao", "financeiro", "boleto", "pagamento", "fatura", "cobranca",
-        "venda", "vendas", "proposta", "pedido", "orcamento", "contrato",
+        "venda", "vendas", "proposta", "pedido", "orcamento", "contrato", "pix", "chave pix",
     )):
         _log_routing("admin")
         return "admin"
