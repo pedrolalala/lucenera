@@ -16,6 +16,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
+from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
 
 # -------------------------------------------------------------------
 # Carrega .env AQUI também (robustez)
@@ -114,7 +115,7 @@ def aguardar_run(
     run: Any,
     timeout_s: int = 90,
     poll_interval_s: float = 0.8,
-    on_requires_action: Optional[Callable[[Any], List[Dict[str, str]]]] = None,
+    on_requires_action: Optional[Callable[[Any], Iterable[ToolOutput]]] = None,
 ) -> str:
     """
     Faz polling do run até concluir.
@@ -125,6 +126,9 @@ def aguardar_run(
     """
     inicio = time.monotonic()
     run_id = getattr(run, "id", None)
+    if not run_id:
+        raise ValueError("Run object does not contain a valid 'id'.")
+    run_id = str(run_id)
 
     while True:
         run = cliente.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
@@ -135,7 +139,7 @@ def aguardar_run(
 
         if status == STATUS_REQUIRES_ACTION:
             if on_requires_action is not None:
-                tool_outputs = on_requires_action(run) or []
+                tool_outputs: Iterable[ToolOutput] = on_requires_action(run) or []
                 if tool_outputs:
                     cliente.beta.threads.runs.submit_tool_outputs(
                         thread_id=thread_id,
@@ -159,24 +163,22 @@ def aguardar_run(
 # -------------------------------------------------------------------
 # Helpers de formatação de resposta
 # -------------------------------------------------------------------
-def _ensure_prefix(texto: str, prefixo: str = "Julia.") -> str:
-    """
-    Garante que toda resposta comece com o prefixo (ex: "Julia.") em linha separada.
-    Mesmo que o modelo não responda nada, ainda retorna o prefixo.
-    """
+def _ensure_prefix(texto: str, prefixo: str = "**Julia:** ") -> str:
+    """Garante que toda resposta comece com o prefixo no mesmo parágrafo."""
     corpo = (texto or "").strip()
-
-    # Sempre começa com o prefixo, mesmo se estiver vazio
     if not corpo:
-        return f"{prefixo}\n..."  # ou coloque o fallback desejado aqui
+        return prefixo.rstrip()
 
-    # Se já começa com o prefixo, evita duplicar
-    linhas = [l.rstrip() for l in corpo.splitlines()]
-    if linhas and linhas[0].strip().lower().startswith(prefixo.lower()):
-        resto = "\n".join(linhas[1:]).strip()
-        return f"{prefixo}\n{resto}" if resto else f"{prefixo}\n"
+    lower_corpo = corpo.lower()
+    for marker in ("**julia:**", "julia.", "julia:"):
+        if lower_corpo.startswith(marker):
+            corpo = corpo[len(marker):].lstrip(" \n-:")
+            break
 
-    return f"{prefixo}\n{corpo}"
+    corpo = " ".join(corpo.split())
+    if not corpo:
+        return prefixo.rstrip()
+    return f"{prefixo}{corpo}"
 
 
 # -------------------------------------------------------------------
@@ -188,7 +190,7 @@ def executar_assistente_e_aguardar(
     *,
     instructions: Optional[str] = None,
     timeout_s: int = 90,
-    on_requires_action: Optional[Callable[[Any], List[Dict[str, str]]]] = None,
+    on_requires_action: Optional[Callable[[Any], Iterable[ToolOutput]]] = None,
 ) -> str:
     """Cria o run para um assistant/thread e aguarda a conclusão, retornando o último texto do assistente."""
     run = cliente.beta.threads.runs.create(
@@ -296,11 +298,12 @@ def _image_caption(url: str) -> Optional[str]:
 
     # 2) Fallback: ask the model directly with the URL (legacy behaviour)
     try:
+        from openai.types.chat import ChatCompletionUserMessageParam
         prompt = (
             "Descreva objetivamente a imagem (1–2 frases úteis para atendimento técnico/comercial no WhatsApp)."
             f"\nURL: {url}"
         )
-        msgs = [{"role": "user", "content": prompt}]
+        msgs: list[ChatCompletionUserMessageParam] = [{"role": "user", "content": prompt}]
         out = cliente.chat.completions.create(model=VISION_MODEL, messages=msgs, temperature=0.2)
         cap = (out.choices or [])[0].message.content
         return (cap or "").strip() or None

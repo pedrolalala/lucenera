@@ -1,5 +1,41 @@
-    # -*- coding: utf-8 -*-
-from services.chatgpt_responder import gerar_resposta_com_chatgpt
+# -*- coding: utf-8 -*-
+try:
+    from services.chatgpt_responder import (
+        gerar_resposta_com_chatgpt,
+        _normalize_for_match as _norm,
+        _ensure_prefix as _ensure_ai_prefix,
+    )
+    print(">> Erro de normalização resolvido (_norm importado de chatgpt_responder)", flush=True)
+except Exception:
+    from services.chatgpt_responder import gerar_resposta_com_chatgpt  # type: ignore
+
+    def _norm(value):
+        import re as _re
+        import unicodedata as _unicodedata
+
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        normalized = _unicodedata.normalize("NFKD", text)
+        normalized = "".join(ch for ch in normalized if not _unicodedata.combining(ch))
+        normalized = _re.sub(r"\s+", " ", normalized).strip().lower()
+        return normalized
+
+    def _ensure_ai_prefix(text: str) -> str:  # pragma: no cover - fallback simples
+        trimmed = (text or "").strip()
+        if not trimmed:
+            return "*Julia:*"
+        lower = trimmed.lower()
+        for marker in ("*julia:*", "julia.", "julia:"):
+            if lower.startswith(marker):
+                trimmed = trimmed[len(marker):].lstrip(" \n-:")
+                break
+        body = " ".join(trimmed.split())
+        return f"*Julia:* {body}" if body else "*Julia:*"
+
+    print(">> Erro de normalização resolvido (_norm fallback ativo)", flush=True)
+
+from services import zapi_client
 BLOCKED_INTERNAL    = {_digits_only(x) for x in (INTERNAL_WHATS or []) if _digits_only(x)}  # do config_equipes
 
 # Conjunto final para checagem rápida
@@ -312,6 +348,7 @@ NGROK_KILL_ON_START = _to_bool(_clean_env("KILL_NGROK_ON_BOOT") or _clean_env("N
 # Tabela
 TABLE = _clean_env("TABLE") or "mensagens"
 ID_COLUMN = _clean_env("ID_COLUMN") or "id_num"
+RAW_MESSAGES_TABLE = _clean_env("RAW_MESSAGES_TABLE") or "raw_mensagens"
 
 # Finalizadores e limpeza
 _FINALIZER_TERMS = {
@@ -375,20 +412,23 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
             name = (sender_name or "").strip()
             gen = _gentle_greeting_reply(original_msg, name if name else None)
             if gen:
-                return gen if gen.lower().startswith("julia.") else f"Julia. {gen}"
+                if gen:
+                    return _ensure_ai_prefix(gen)
     except Exception:
         pass
     low_orig = (original_msg or "").lower()
     if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
-        return "Julia. Já te retorno com as observações em breve"
+        return _ensure_ai_prefix("Já te retorno com as observações em breve")
     needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
     for k in needs_check:
         if k in low_orig:
-            return "Julia. Vou verificar com a equipe e retorno com a atualização sobre os itens"
+            return _ensure_ai_prefix(
+                "Vou verificar com a equipe e retorno com a atualização sobre os itens"
+            )
     first = (sender_name or "").split()[0] if sender_name else ""
     if first:
-        return f"Julia. Oi {first}! Tudo ótimo, e você? Posso ajudar com algo agora?"
-    return "Julia. Oi! Tudo ótimo, e você? Posso ajudar com algo agora?"
+        return _ensure_ai_prefix(f"Oi {first}! Tudo ótimo, e você? Posso ajudar com algo agora?")
+    return _ensure_ai_prefix("Oi! Tudo ótimo, e você? Posso ajudar com algo agora?")
 
 # =====================================================================
 # SUPABASE CLIENT
@@ -434,7 +474,7 @@ SYSTEM_RULES = (
     "Fale de forma humana e natural; nunca diga que é IA.\n\n"
     "- Se houver [HISTORICO], use-o para manter o fio da conversa. Evite saudações genéricas se a última fala no histórico foi da empresa."
     "Identidade e tom:\n"
-    "- Responda como se fosse a Julia. (O prefixo 'Julia.' será adicionado pelo formatador.)\n"
+    "- Responda como se fosse a Julia. (O prefixo '*Julia:* ' será adicionado pelo formatador.)\n"
     "- 1–2 frases (máx. 3 se precisar conectar ideia + próxima ação objetiva).\n"
     "- Sem emojis e sem ponto de exclamação.\n"
     "- Não ecoe literalmente o que a pessoa escreveu e não use o nome do contato por padrão.\n"
@@ -734,9 +774,71 @@ def _sanity_check_history_dm(telefone: str, row_id: int) -> bool:
 # =====================================================================
 # INSERÇÃO VIA WEBHOOK Z-API
 # =====================================================================
-def _save_in_supabase_from_zapi(payload: dict) -> Optional[dict]:
+_LAST_SUPABASE_ERROR: Optional[str] = None
+
+
+def _guess_phone_from_payload(payload: Any) -> Optional[str]:
+    if isinstance(payload, dict):
+        for key in ("telefone", "phone", "chat_phone", "connected_phone", "from", "remoteJid", "to"):
+            value = payload.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        nested = payload.get("data")
+        if isinstance(nested, dict):
+            return _guess_phone_from_payload(nested)
+    return None
+
+
+def _log_raw_event(
+    payload: Any,
+    status: str,
+    *,
+    telefone: Optional[str] = None,
+    error: Optional[str] = None,
+    note: Optional[str] = None,
+) -> None:
+    telefone_hint = telefone or _guess_phone_from_payload(payload) or ""
+    telefone_norm = _digits_only(telefone_hint) if telefone_hint else None
+    entry: Dict[str, Any] = {
+        "status": status,
+        "telefone": telefone_norm or (telefone_hint or None),
+        "error": error or None,
+        "note": note or None,
+        "created_at": _now_iso(),
+    }
+    try:
+        if isinstance(payload, (dict, list)):
+            entry["payload_json"] = json.dumps(payload, ensure_ascii=False)
+        elif payload is not None:
+            entry["payload_json"] = str(payload)
+    except Exception as exc:
+        entry["payload_json"] = f"<payload unserializable: {exc}>"
+
     if not supabase:
+        APP_LOG.warning(
+            "RAW_MENSAGENS_SKIP status=%s telefone=%s motivo=supabase_indisponivel",
+            status,
+            telefone_norm or telefone_hint or "",
+        )
+        return
+
+    try:
+        clean_entry = {k: v for k, v in entry.items() if v is not None}
+        supabase.table(RAW_MESSAGES_TABLE).insert(clean_entry).execute()
+    except Exception as exc:
+        APP_LOG.warning(
+            "RAW_MENSAGENS_INSERT_FAIL status=%s telefone=%s err=%s",
+            status,
+            telefone_norm or telefone_hint or "",
+            exc,
+        )
+
+def _save_in_supabase_from_zapi(payload: dict) -> Optional[dict]:
+    global _LAST_SUPABASE_ERROR
+    if not supabase:
+        _LAST_SUPABASE_ERROR = "supabase_unavailable"
         print(">> [ERRO] Supabase indisponível.")
+        APP_LOG.warning("SUPABASE_UNAVAILABLE insert")
         return None
     try:
         # Normalize early and abort if blocked
@@ -838,20 +940,27 @@ def _save_in_supabase_from_zapi(payload: dict) -> Optional[dict]:
         out = supabase.table(TABLE).insert(safe_row).execute()
         data = out.data or []
         if not data:
+            _LAST_SUPABASE_ERROR = "insert_returned_empty"
             print(">> [ERRO] Insert não retornou dados. out =", out)
+            APP_LOG.warning("SUPABASE_INSERT_EMPTY_RESPONSE telefone=%s", telefone)
             try:
                 last = (supabase.table(TABLE).select("*").order(ID_COLUMN, desc=True).limit(1).execute().data or [])
                 if last:
                     print(">> [OK] Insert confirmado via fallback. Último id =", last[0].get(ID_COLUMN))
+                    _LAST_SUPABASE_ERROR = None
                     return last[0]
             except Exception as e:
+                APP_LOG.warning("SUPABASE_INSERT_FALLBACK_FAIL telefone=%s err=%s", telefone, e)
                 print(">> Fallback select falhou:", e, flush=True)
             return None
 
         row = data[0]
         print(f">> [OK] Mensagem inserida. {ID_COLUMN}={row.get(ID_COLUMN)} tel={row.get('telefone')} txt={txt[:60]!r} status={status_val} fromMe={from_me} origem={origem_val}")
+        _LAST_SUPABASE_ERROR = None
         return row
     except Exception as e:
+        _LAST_SUPABASE_ERROR = str(e)
+        APP_LOG.warning("SUPABASE_INSERT_FAIL err=%s", e)
         print(">> [ERRO] Falha ao salvar no Supabase:", e, flush=True)
         return None
 
@@ -1168,10 +1277,9 @@ def _formatar_resposta_julia_local(texto: str) -> str:
     s = (texto or "").strip()
     if not s:
         return ""
-    s = re.sub(r"^\s*j[uú]lia\.?\s*-?\s*", "", s, flags=re.IGNORECASE).strip()
-    s = re.sub(r"\s{2,}", " ", s)
-    s = s.rstrip(" !")
-    return f"Julia. {s}"
+    s = re.sub(r"^\s*\*?j[uú]lia[:\.]?\*?\s*-?\s*", "", s, flags=re.IGNORECASE).strip()
+    s = re.sub(r"\s{2,}", " ", s).rstrip(" !")
+    return _ensure_ai_prefix(s)
 
 # Campos que não devem ser sobrescritos no Supabase
 NON_WRITABLE_COLS = {"is_group"}
@@ -1806,6 +1914,16 @@ def processar_inline(row: dict) -> None:
         except Exception as _e_media:
             print(">> aviso: enrich_row_with_media_text falhou:", _e_media, flush=True)
 
+        audit_preview = (txt[:80] if txt else "").replace("\n", " ")
+        APP_LOG.info(
+            "INLINE_AUDIT_START id=%s tel=%s len=%d debounce=%s preview=%s",
+            row_id,
+            telefone or "-",
+            len(txt or ""),
+            bool(meta.get("debounce_batch_ids")),
+            audit_preview,
+        )
+
         # Guards
         def _save_in_supabase_from_zapi(payload: dict) -> Optional[dict]:
             if not supabase:
@@ -1939,13 +2057,13 @@ def processar_inline(row: dict) -> None:
             "A mensagem é de cortesia/saudação/agradecimento (smalltalk). "
             "Responda de forma natural e simpática, sem prometer 'verificar' nada a menos que exista pedido técnico claro."
         )
-        # Few-shot examples to guide smalltalk tone. Keep the internal prefix 'Julia.' —
+        # Few-shot examples to guide smalltalk tone. Keep the internal prefix '*Julia:* ' —
         # the system will enforce it, so examples should be short and natural.
         smalltalk_examples = (
             "Exemplos de saudações e respostas curtas:\n"
-            "Usuário: Oi, tudo bem?\nAssistente: Julia. Oi! Tudo ótimo, e você?\n\n"
-            "Usuário: Obrigado!\nAssistente: Julia. Por nada — quando precisar, estou por aqui.\n\n"
-            "Usuário: Boa tarde\nAssistente: Julia. Boa tarde! Como posso ajudar hoje?"
+            "Usuário: Oi, tudo bem?\nAssistente: *Julia:* Oi! Tudo ótimo, e você?\n\n"
+            "Usuário: Obrigado!\nAssistente: *Julia:* Por nada — quando precisar, estou por aqui.\n\n"
+            "Usuário: Boa tarde\nAssistente: *Julia:* Boa tarde! Como posso ajudar hoje?"
         )
         smalltalk_hint = smalltalk_hint + "\n\n" + smalltalk_examples
 
@@ -2053,7 +2171,12 @@ def processar_inline(row: dict) -> None:
 
             lock = _RUN_LOCKS[chat_key]
             with lock:
-                resposta = gerar_resposta_com_chatgpt(txt, user_identifier)
+                resposta = gerar_resposta_com_chatgpt(
+                    txt,
+                    user_identifier,
+                    mensagem_id=row_id,
+                    telefone=telefone,
+                )
         except Exception as exc:
             print(">> erro: gerar_resposta_com_chatgpt falhou:", exc, flush=True)
             _supabase_update_safe(row_id, {
@@ -2066,6 +2189,11 @@ def processar_inline(row: dict) -> None:
             return
 
         if not resposta or not resposta.strip():
+            APP_LOG.warning(
+                "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s",
+                row_id,
+                telefone or "-",
+            )
             _supabase_update_safe(row_id, {
                 "status": "ignored_empty_ai",
                 "used_ai": False,
@@ -2280,32 +2408,45 @@ def webhook_whatsapp():
 
     saved_any = False
     for ev in events:
+        telefone_guess = _guess_phone_from_payload(ev)
         if not _is_message_event(ev):
+            _log_raw_event(ev, "ignored_not_message_event", telefone=telefone_guess, note="Evento sem conteúdo processável")
             continue
-        # Normalize payload early so we can gate blocked numbers before any DB insert
+
         try:
             norm_ev = parse_zapi_payload(ev or {})
-            telefone_chk_early = (norm_ev.get("telefone") or "")
-        except Exception:
-            telefone_chk_early = ""
+        except Exception as parse_exc:
+            APP_LOG.warning("WEBHOOK_PARSE_FAIL err=%s", parse_exc)
+            _log_raw_event(ev, "parse_failure", telefone=telefone_guess, error=str(parse_exc))
+            continue
+
+        telefone_chk_early = (norm_ev.get("telefone") or "")
+        telefone_hint = telefone_chk_early or telefone_guess
 
         try:
             if telefone_chk_early and is_blocked_number(telefone_chk_early):
                 print(f">> [BLOCKED] Ignorando completamente mensagem de número bloqueado: {telefone_chk_early}", flush=True)
+                _log_raw_event(ev, "ignored_blocked_number_pre_insert", telefone=telefone_hint, note="Bloqueado antes do insert")
                 return jsonify({"ok": True, "blocked": True, "saved": False, "processed": False}), 200
         except Exception:
             pass
 
         row = _save_in_supabase_from_zapi(ev)
         if not row:
+            error_detail = _LAST_SUPABASE_ERROR or "insert_failed"
+            _log_raw_event(ev, "supabase_insert_failed", telefone=telefone_hint, error=error_detail)
             continue
-        saved_any = True
 
-        # >>> BLOQUEIO POR NÚMERO (evita debounce/fluxo inteiro)
+        saved_any = True
+        telefone_after = str(row.get("telefone") or telefone_hint or "").strip()
+        row_id = row.get(ID_COLUMN)
+        base_note = f"id={row_id}" if row_id is not None else None
+
         try:
-            telefone_chk = (row.get("telefone") or "").strip()
+            telefone_chk = telefone_after
         except Exception:
             telefone_chk = ""
+
         try:
             blocked = is_blocked_number(telefone_chk)
         except NameError:
@@ -2316,29 +2457,27 @@ def webhook_whatsapp():
                 print(f">> [BLOCKED] mensagem bloqueada detectada após insert para telefone={telefone_chk}; ignorando sem notificar Teams.", flush=True)
             except Exception:
                 pass
+            _log_raw_event(ev, "saved_blocked_number", telefone=telefone_after, note=base_note)
             continue
 
-
-        # skip grupos
         try:
             meta = (row.get("mensagem") or {}).get("meta") or {}
             is_group = bool(row.get("group_id")) or bool(meta.get("is_group"))
         except Exception:
             is_group = False
-        # detectar de forma robusta se a mensagem foi enviada pelo time/empresa
+
         try:
             is_from_me = _row_is_from_me(row)
         except Exception:
             is_from_me = False
 
-        # >>> Se a mensagem veio "de mim" (time interno), já está salva para histórico.
-        # Não entra no pipeline/AI/debounce.
         if is_from_me:
             try:
                 rid = row.get(ID_COLUMN)
                 _supabase_update_safe(rid, {"status": row.get("status") or "sent"})
             except Exception:
                 pass
+            _log_raw_event(ev, "saved_from_me", telefone=telefone_after, note=base_note)
             continue
 
         if is_group:
@@ -2352,11 +2491,13 @@ def webhook_whatsapp():
                 })
             except Exception as _e:
                 print(">> aviso: falha ao marcar grupo como ignorado:", _e, flush=True)
+            _log_raw_event(ev, "saved_group_ignored", telefone=telefone_after, note=base_note)
             continue
 
-        if not is_from_me:
-            chat_key = _row_chat_key(row)
-            _schedule_debounce(chat_key, row)
+        chat_key = _row_chat_key(row)
+        _schedule_debounce(chat_key, row)
+        final_note = base_note + f" chat_key={chat_key}" if base_note else f"chat_key={chat_key}"
+        _log_raw_event(ev, "scheduled_processing", telefone=telefone_after, note=final_note)
 
     return {"ok": True, "saved": saved_any}, 200
 
@@ -2532,41 +2673,122 @@ def teams_suggest_submit():
     except Exception as e:
         print(f">> aviso: falha ao buscar row para envio (suggest): {e}", flush=True)
 
-    ok = False
-    if OUTGOING_ENABLED:
-        print(f">> /teams/suggest (POST): OUTGOING_ENABLED=1 row_found={bool(row)} id={rid}", flush=True)
-        if row:
-            try:
-                try:
-                    print(f">> /teams/suggest (POST): sending to telefone={row.get('telefone')} group_id={row.get('group_id')}", flush=True)
-                except Exception:
-                    pass
-                ok = bool(send_text_from_row(row, texto))
-            except Exception as e:
-                print(f">> Falha ao enviar sugestão via Teams (send_text_from_row): {e}", flush=True)
+    telefone_feedback = None
+    if row:
+        try:
+            from services.feedback_respostas import salvar_feedback_resposta  # type: ignore
+            from services.chatgpt_responder import _detect_action_label  # type: ignore
+        except Exception as import_err:
+            print(f">> aviso: imports feedback_respostas indisponíveis: {import_err}", flush=True)
         else:
-            print(">> OUTGOING_ENABLED=1 mas row não encontrado — não enviando.", flush=True)
-    else:
-        print("[DRY RUN] OUTGOING_ENABLED=0 — sugestão não enviada (modo simulação).", flush=True)
+            mensagem_cliente = ""
+            contexto_extra = None
+            try:
+                mensagem = row.get("mensagem") or {}
+                if isinstance(mensagem, dict):
+                    texto_base = mensagem.get("text") or mensagem.get("mensagem") or mensagem.get("body")
+                    if isinstance(texto_base, str) and texto_base.strip():
+                        mensagem_cliente = texto_base.strip()
+                    meta = mensagem.get("meta") or {}
+                    if isinstance(meta, dict):
+                        contexto_extra = meta.get("debounce_unified_text") or meta.get("debounce_batch_preview")
+                        if not contexto_extra:
+                            linhas = meta.get("debounce_batch_lines")
+                            if isinstance(linhas, (list, tuple)):
+                                partes = [item.strip() for item in linhas if isinstance(item, str) and item.strip()]
+                                if partes:
+                                    contexto_extra = "\n".join(partes)
+                if not contexto_extra and isinstance(row.get("contexto"), str):
+                    contexto_extra = row.get("contexto").strip() or None
+                texto_alt = row.get("content") or row.get("texto") or row.get("mensagem_texto")
+                if not mensagem_cliente and isinstance(texto_alt, str) and texto_alt.strip():
+                    mensagem_cliente = texto_alt.strip()
+            except Exception as parse_err:
+                print(f">> aviso: não foi possível extrair mensagem do cliente: {parse_err}", flush=True)
+            resposta_original = ""
+            try:
+                candidatos = [
+                    row.get("ai_draft"),
+                    row.get("resposta"),
+                    row.get("final_out"),
+                    row.get("resposta_bot_original"),
+                ]
+                for candidato in candidatos:
+                    if isinstance(candidato, str) and candidato.strip():
+                        resposta_original = candidato.strip()
+                        break
+            except Exception:
+                resposta_original = ""
 
-    # Atualiza registro com status final (envio ou apenas sugestão)
+            categoria_feedback = row.get("categoria") if isinstance(row.get("categoria"), str) else None
+            intencao_feedback = None
+            try:
+                if mensagem_cliente:
+                    intencao_feedback = _detect_action_label(mensagem_cliente)
+            except Exception as detect_err:
+                print(f">> aviso: falha ao detectar intenção para feedback: {detect_err}", flush=True)
+
+            telefone_feedback = row.get("telefone") if isinstance(row.get("telefone"), str) else None
+            try:
+                salvar_feedback_resposta(
+                    mensagem_cliente=mensagem_cliente,
+                    resposta_bot_original=resposta_original,
+                    resposta_humana_correta=texto,
+                    telefone=telefone_feedback,
+                    origem="teams_suggest",
+                    categoria=categoria_feedback,
+                    intencao=intencao_feedback,
+                    contexto=contexto_extra,
+                )
+                print(
+                    f">> feedback_respostas registrado (telefone={telefone_feedback} intencao={intencao_feedback} categoria={categoria_feedback})",
+                    flush=True,
+                )
+            except ValueError as val_err:
+                print(f">> aviso: feedback_respostas não salvo: {val_err}", flush=True)
+            except Exception as feedback_err:
+                print(f">> aviso: falha ao salvar feedback_respostas: {feedback_err}", flush=True)
+
+    telefone_destino = telefone_feedback if telefone_feedback else (row.get("telefone") if isinstance(row, dict) and isinstance(row.get("telefone"), str) else None)
+    envio_ok = False
+    envio_tentado = False
+
+    if telefone_destino:
+        envio_tentado = True
+        if OUTGOING_ENABLED:
+            print(f">> /teams/suggest (POST): enviando automaticamente telefone={telefone_destino} id={rid}", flush=True)
+            try:
+                envio_ok = bool(zapi_client.enviar_mensagem_wa(telefone=telefone_destino, mensagem=texto))
+            except Exception as envio_err:
+                print(f">> Falha ao enviar sugestão via enviar_mensagem_wa: {envio_err}", flush=True)
+        else:
+            print("[DRY RUN] OUTGOING_ENABLED=0 — sugestão não enviada (modo simulação).", flush=True)
+    else:
+        print(">> Sugestão sem telefone — envio automático ignorado.", flush=True)
+
+    status_final = "sent" if envio_ok or (envio_tentado and not OUTGOING_ENABLED) else "error"
+    erro_final = None
+    if not telefone_destino:
+        erro_final = "Telefone ausente para envio da sugestão"
+    elif OUTGOING_ENABLED and not envio_ok:
+        erro_final = "Falha no envio WhatsApp"
+
     _supabase_update_safe(rid, {
-        "final_out": texto if ok or not OUTGOING_ENABLED else None,
+        "final_out": texto,
         "manual_reply": texto,
-        "approved": True if ok or not OUTGOING_ENABLED else False,
+        "approved": status_final == "sent",
         "approved_by": "Teams",
-        "status": "sent" if ok else ("sent_dry_run" if not OUTGOING_ENABLED else "suggested"),
+        "status": status_final,
         "fromMe": True,
         "origem": "human",
         "used_ai": False,
-        "error": None if ok or not OUTGOING_ENABLED else ("Falha no envio WhatsApp" if OUTGOING_ENABLED else None)
+        "error": erro_final
     })
 
-    # Registrar no histórico se enviado (ou em dry-run registrar para rastreabilidade)
-    if ok or not OUTGOING_ENABLED:
+    if envio_ok or (envio_tentado and not OUTGOING_ENABLED):
         try:
             supabase.table("mensagens").insert({
-                "telefone": row.get("telefone") if row else None,
+                "telefone": telefone_destino,
                 "group_id": row.get("group_id") if row else None,
                 "mensagem": {"text": texto, "meta": {"type": "outgoing_manual", "status": "SENT"}},
                 "fromMe": True,
@@ -2576,7 +2798,7 @@ def teams_suggest_submit():
         except Exception as e:
             print(">> aviso: falha ao registrar sugestão no histórico:", e, flush=True)
 
-    print(f">> Sugestão registrada via Teams (id={rid}) sent={ok}")
+    print(f">> Sugestão registrada via Teams (id={rid}) sent={envio_ok}")
     return "<h3>✅ Sugestão registrada com sucesso!</h3><p>Você pode fechar esta janela.</p>"
 
 @app.get("/favicon.ico")

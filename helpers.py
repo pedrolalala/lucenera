@@ -217,8 +217,11 @@ def _team_is_active(telefone: str, window_minutes: int = 12) -> bool:
         ) or []
         if not rows:
             return False
+        row = rows[0]
+        if not isinstance(row, dict):
+            return False
         # se a última foi do próprio bot, não bloqueia
-        return (rows[0].get("origem") or "").lower() != "bot"
+        return (str(row.get("origem")) or "").lower() != "bot"
     except Exception:
         return False
 
@@ -236,12 +239,12 @@ def _intercept_email_request(txt: str) -> str | None:
         return None
     t = txt.lower()
     if "murilo" in t or "murillo" in t:
-        return f"Julia. O e-mail do Murilo é {_EMAILS['murilo']}"
+        return f"*Julia:* O e-mail do Murilo é {_EMAILS['murilo']}"
     if "thais" in t or "thaís" in t:
-        return f"Julia. O e-mail da Thais é {_EMAILS['thais']}"
+        return f"*Julia:* O e-mail da Thais é {_EMAILS['thais']}"
     if "tricia" in t or "trícia" in t:
-        return f"Julia. O e-mail da Tricia é {_EMAILS['tricia']}"
-    return f"Julia. Nosso e-mail geral é {_EMAILS['geral']}"
+        return f"*Julia:* O e-mail da Tricia é {_EMAILS['tricia']}"
+    return f"*Julia:* Nosso e-mail geral é {_EMAILS['geral']}"
 
 # -----------------------------
 # Exporte explícito para Pylance reconhecer no "import *"

@@ -10,7 +10,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple, List
 
-from supabase_helpers import supabase
+try:
+    import supabase_helpers  # type: ignore[import-not-found]
+except ImportError:  # pragma: no cover - dependência opcional
+    supabase_helpers = None  # type: ignore[assignment]
+
+if supabase_helpers is not None:
+    supabase = getattr(supabase_helpers, "supabase", None)
+else:
+    supabase = None
 
 ENTREGADORES = {
     "5516992089829",  # número de teste

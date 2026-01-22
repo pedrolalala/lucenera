@@ -22,7 +22,37 @@ from services.openai_helpers import (
     cliente,
     enrich_row_with_media_text,  # pré-processamento de mídia
 )
-from services.chatgpt_responder import gerar_resposta_com_chatgpt
+try:
+    from services.chatgpt_responder import (
+        gerar_resposta_com_chatgpt,
+        _normalize_for_match as _norm,
+        _ensure_prefix as _ensure_ai_prefix,
+    )
+    print(">> Erro de normalização resolvido (_norm importado de chatgpt_responder)", flush=True)
+except Exception:
+    from services.chatgpt_responder import gerar_resposta_com_chatgpt  # type: ignore
+
+    def _norm(value: Optional[str]) -> str:
+        if not value:
+            return ""
+        cleaned = unicodedata.normalize("NFKD", value)
+        cleaned = "".join(ch for ch in cleaned if not unicodedata.combining(ch))
+        cleaned = re.sub(r"\s+", " ", cleaned).strip().lower()
+        return cleaned
+
+    def _ensure_ai_prefix(text: str) -> str:  # pragma: no cover - fallback simples
+        trimmed = (text or "").strip()
+        if not trimmed:
+            return "**Julia:**"
+        lower = trimmed.lower()
+        for marker in ("**julia:**", "julia.", "julia:"):
+            if lower.startswith(marker):
+                trimmed = trimmed[len(marker):].lstrip(" \n-:")
+                break
+        body = " ".join(trimmed.split())
+        return f"**Julia:** {body}" if body else "**Julia:**"
+
+    print(">> Erro de normalização resolvido (_norm fallback ativo)", flush=True)
 from selecionar_persona import selecionar_persona
 from selecionar_documento import selecionar_contexto
 from services.zapi_client import send_text_from_row, send_text_to
@@ -365,6 +395,26 @@ def _build_debounce_preview(
     return linhas, preview, consolidado
 
 
+def _format_debounce_context_block(
+    mensagens: Sequence[dict], window_seconds: int
+) -> str:
+    ordered = sorted(mensagens, key=_debounce_sort_key)
+    if not ordered:
+        return ""
+    header = f"({max(window_seconds, 1)}s, {len(ordered)} msgs)"
+    linhas: List[str] = []
+    for msg in ordered:
+        conteudo = _describe_message_for_debounce(msg)
+        if not conteudo:
+            continue
+        horario = _format_debounce_timestamp(msg) or "--:--"
+        quem = "Equipe" if msg.get("fromMe") else "Cliente"
+        linhas.append(f"[{horario}] {quem}: {conteudo}")
+    if not linhas:
+        return header
+    return "\n".join([header] + linhas)
+
+
 def _fetch_debounced_messages(
     row: Optional[dict],
     buffer: Optional[Sequence[dict]] = None,
@@ -436,6 +486,8 @@ def _schedule_debounce(chat_key: str, row: dict):
                 "debounce_unified_text",
                 "debounce_batch_ids",
                 "debounce_batch_before_id",
+                "debounce_context_block",
+                "debounce_context_window",
             ):
                 meta.pop(k, None)
         except Exception:
@@ -456,6 +508,10 @@ def _schedule_debounce(chat_key: str, row: dict):
             debounced_messages = _fetch_debounced_messages(latest, buffer=buf)
             batch_count = len(debounced_messages)
             window_seconds = int(max(1, time.time() - st.get("first_ts", time.time())))
+            context_block = _format_debounce_context_block(debounced_messages, window_seconds)
+
+            latest["_debounced_messages"] = debounced_messages
+            should_dispatch = batch_count > 0
 
             if batch_count > 1:
                 linhas, preview, consolidado = _build_debounce_preview(debounced_messages)
@@ -467,6 +523,9 @@ def _schedule_debounce(chat_key: str, row: dict):
                     "debounce_batch_preview": preview,
                     "debounce_unified_text": consolidado,
                 }
+                if context_block:
+                    meta_extra["debounce_context_block"] = context_block
+                    meta_extra["debounce_context_window"] = window_seconds
                 if batch_ids:
                     meta_extra["debounce_batch_ids"] = batch_ids
                     meta_extra["debounce_batch_before_id"] = min(batch_ids)
@@ -475,12 +534,65 @@ def _schedule_debounce(chat_key: str, row: dict):
                     latest.setdefault("mensagem", {})["text"] = consolidado
                 except Exception:
                     pass
+                update_payload: Dict[str, Any] = {}
+                if consolidado and _column_exists("texto"):
+                    update_payload["texto"] = consolidado
+                if consolidado and _column_exists("body"):
+                    update_payload["body"] = consolidado
+                mensagem_payload = latest.get("mensagem") if isinstance(latest.get("mensagem"), dict) else None
+                if mensagem_payload:
+                    update_payload["mensagem"] = mensagem_payload
+                if context_block:
+                    if _column_exists("contexto"):
+                        update_payload["contexto"] = context_block
+                    if _column_exists("mensagem_completa"):
+                        update_payload["mensagem_completa"] = context_block
+                if update_payload:
+                    rid_update = latest.get("id_num") or latest.get("id")
+                    if rid_update is not None:
+                        _supabase_update_safe(rid_update, update_payload)
             else:
                 _clear_debounce_meta(latest)
-                latest["_debounced_messages"] = debounced_messages
                 rid = latest.get("id_num") or latest.get("id") or "?"
                 print(f">> [debounce] disparando para {chat_key} (id={rid}) com lote={len(buf)}", flush=True)
-                processar_inline(latest)
+                if context_block:
+                    meta = latest.setdefault("mensagem", {}).setdefault("meta", {})
+                    meta["debounce_context_block"] = context_block
+                    meta["debounce_context_window"] = window_seconds
+
+            if should_dispatch:
+                rid = latest.get("id_num") or latest.get("id")
+                if context_block and rid is not None and batch_count <= 1:
+                    context_payload: Dict[str, Any] = {}
+                    mensagem_payload = latest.get("mensagem") if isinstance(latest.get("mensagem"), dict) else {}
+                    if mensagem_payload:
+                        context_payload["mensagem"] = mensagem_payload
+                    if _column_exists("contexto"):
+                        context_payload["contexto"] = context_block
+                    if _column_exists("mensagem_completa"):
+                        context_payload["mensagem_completa"] = context_block
+                    _supabase_update_safe(rid, context_payload)
+                try:
+                    processar_inline(latest)
+                except Exception as exc:
+                    print(
+                        f">> debounce fire erro ao processar chat_key={chat_key}: {exc}",
+                        flush=True,
+                    )
+                    if rid is not None:
+                        telefone_err = latest.get("telefone") or latest.get("from") or ""
+                        conteudo_err = ((latest.get("mensagem") or {}).get("text") or "")
+                        if conteudo_err and len(conteudo_err) > 160:
+                            conteudo_err = conteudo_err[:157] + "..."
+                        error_payload: Dict[str, Any] = {
+                            "status": "error_debounce",
+                            "error": f"debounce_dispatch: {type(exc).__name__}: {exc} | phone={telefone_err} | text={conteudo_err}",
+                        }
+                        meta = latest.get("mensagem", {}).get("meta") if isinstance(latest.get("mensagem"), dict) else None
+                        if isinstance(meta, dict) and meta.get("debounce_context_block") and _column_exists("contexto"):
+                            error_payload.setdefault("contexto", meta.get("debounce_context_block"))
+                        _supabase_update_safe(rid, error_payload)
+                    return
 
         except Exception as e:
             print(">> debounce fire erro:", e, flush=True)
@@ -604,7 +716,7 @@ def _strip_filler_phrases(s: str) -> str:
 
 
 def _humanize_robotic_response(resposta: str, sender_name: Optional[str], original_msg: str) -> str:
-    """Detecta padrões robóticos e reescreve para um tom humano mantendo 'Julia.' prefixo.
+    """Detecta padrões robóticos e reescreve para um tom humano mantendo o prefixo '**Julia:** '.
 
     - Se a resposta contém frases como 'recebi sua mensagem' ou 'entendi', reescreve.
     - Para saudações curtas, gera uma saudação calorosa via _gentle_greeting_reply.
@@ -625,24 +737,27 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
             name = (sender_name or "").strip()
             gen = _gentle_greeting_reply(original_msg, name if name else None)
             if gen:
-                return gen if gen.lower().startswith("julia.") else f"Julia. {gen}"
+                if gen:
+                    return _ensure_ai_prefix(gen)
     except Exception:
         pass
 
     low_orig = (original_msg or "").lower()
     if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
-        return "Julia. Já te retorno com as observações em breve"
+        return _ensure_ai_prefix("Já te retorno com as observações em breve")
 
     needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
     for k in needs_check:
         if k in low_orig:
-            return "Julia. Vou verificar com a equipe e retorno com a atualização sobre os itens"
+            return _ensure_ai_prefix(
+                "Vou verificar com a equipe e retorno com a atualização sobre os itens"
+            )
 
     # Fallback: saudação curta e humana
     first = (sender_name or "").split()[0] if sender_name else ""
     if first:
-        return f"Julia. Oi {first}! Tudo ótimo, e você?"
-    return "Julia. Oi! Tudo ótimo, e você?"
+        return _ensure_ai_prefix(f"Oi {first}! Tudo ótimo, e você?")
+    return _ensure_ai_prefix("Oi! Tudo ótimo, e você?")
 
 # =====================================================================
 # SUPABASE CLIENT
@@ -689,7 +804,7 @@ SYSTEM_RULES = (
     "Fale de forma humana e natural; nunca diga que é IA.\n\n"
     "- Se houver [HISTORICO], use-o para manter o fio da conversa. Evite saudações genéricas se a última fala no histórico foi da empresa."
     "Identidade e tom:\n"
-    "- Responda como se fosse a Julia. (O prefixo 'Julia.' será adicionado pelo formatador.)\n"
+    "- Responda como se fosse a Julia. (O prefixo '**Julia:** ' será adicionado pelo formatador.)\n"
     "- 1–2 frases (máx. 3 se precisar conectar ideia + próxima ação objetiva).\n"
     "- Sem emojis e sem ponto de exclamação.\n"
     "- Não ecoe literalmente o que a pessoa escreveu e não use o nome do contato por padrão.\n"
@@ -1665,10 +1780,9 @@ def _formatar_resposta_julia_local(texto: str) -> str:
     s = (texto or "").strip()
     if not s:
         return ""
-    s = re.sub(r"^\s*j[uú]lia\.?\s*-?\s*", "", s, flags=re.IGNORECASE).strip()
-    s = re.sub(r"\s{2,}", " ", s)
-    s = s.rstrip(" !")
-    return f"Julia. {s}"
+    s = re.sub(r"^\s*\*?j[uú]lia[:\.]?\*?\s*-?\s*", "", s, flags=re.IGNORECASE).strip()
+    s = re.sub(r"\s{2,}", " ", s).rstrip(" !")
+    return _ensure_ai_prefix(s)
 
 def _gentle_greeting_reply(incoming_text: str, sender_name: str | None) -> str:
     """
@@ -2050,12 +2164,15 @@ def _teams_format_text(row: dict) -> str:
     tel  = (row.get("telefone") or "—")
     meta = (row.get("mensagem") or {}).get("meta") or {}
 
+    context_block = meta.get("debounce_context_block")
     # preferir o preview do debounce, se presente
     preview = meta.get("debounce_batch_preview")
     batch_s = meta.get("debounce_batch_seconds")
     batch_n = meta.get("debounce_batch_count")
 
-    if preview:
+    if context_block:
+        msg = context_block.strip()
+    elif preview:
         header = []
         if batch_s: header.append(f"{batch_s}s")
         if batch_n: header.append(f"{batch_n} msgs")
@@ -2069,18 +2186,28 @@ def _teams_format_text(row: dict) -> str:
 
 def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | None = None) -> None:
     # Não notificar se for grupo
-    if _is_group_row(row):
-        print(">> [TEAMS] skip notify (grupo).", flush=True)
-        return
-        if _is_blocked_row(row):
-            print(f">> [TEAMS] skip notify (blocked) for {row.get('telefone')}", flush=True)
+    telefone = row.get("telefone")
+    mensagem = ((row.get("mensagem") or {}).get("text") or "").strip()
+    try:
+        if _is_group_row(row):
+            logger.info(f"[TEAMS NOTIFY] Ignorado: grupo | telefone={telefone} | msg={mensagem}")
+            print(">> [TEAMS] skip notify (grupo).", flush=True)
             return
+        if _is_blocked_row(row):
+            logger.info(f"[TEAMS NOTIFY] Ignorado: bloqueado | telefone={telefone} | msg={mensagem}")
+            print(f">> [TEAMS] skip notify (blocked) for {telefone}", flush=True)
+            return
+    except Exception as e:
+        logger.warning(f"[TEAMS NOTIFY] Erro ao checar grupo/bloqueado: telefone={telefone}, erro={e}")
+        pass
     # Não notificar se a mensagem é de saída (registrada como enviado pelo time)
     try:
         if isinstance(row, dict) and row.get("__entrega_flow__") is True:
+            logger.info(f"[TEAMS NOTIFY] Ignorado: fluxo entregas | telefone={telefone} | msg={mensagem}")
             print(">> [TEAMS] aprovação ignorada (fluxo entregas).", flush=True)
             return
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[TEAMS NOTIFY] Erro ao checar entrega_flow: telefone={telefone}, erro={e}")
         pass
     try:
         telefone_raw = row.get("telefone") if isinstance(row, dict) else None
@@ -2098,64 +2225,77 @@ def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | N
             mensagem_bruta = msg_payload
         gatilho = (mensagem_bruta or "").strip().strip('"').strip("'").lower()
         if telefone_norm and telefone_norm in ENTREGADORES_WHATS and "entrega finalizada" in gatilho:
+            logger.info(f"[TEAMS NOTIFY] Ignorado: entrega finalizada | telefone={telefone} | msg={mensagem}")
             print(">> [TEAMS] aprovação ignorada (entrega finalizada por entregador).", flush=True)
             return
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[TEAMS NOTIFY] Erro ao checar entregador: telefone={telefone}, erro={e}")
         pass
     try:
         meta = (row.get("mensagem") or {}).get("meta") or {}
         if bool(row.get("fromMe")) or (str(row.get("origem") or "").lower() in {"bot","human"} and str(meta.get("type") or "").lower().startswith("outgoing")):
+            logger.info(f"[TEAMS NOTIFY] Ignorado: outgoing/fromMe | telefone={telefone} | msg={mensagem}")
             print("-> [TEAMS] skip notify (outgoing/fromMe).", flush=True)
             return
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[TEAMS NOTIFY] Erro ao checar outgoing/fromMe: telefone={telefone}, erro={e}")
         pass
 
     # mantém compatibilidade: se `channel` for None, usa o webhook padrão
-    if channel:
-        webhook_resolved = get_teams_webhook_for_channel(channel)
-        if not webhook_resolved:
-            print(f"[TEAMS] Nenhum webhook configurado para o canal: {channel}", flush=True)
-            return
-    else:
-        if not TEAMS_WEBHOOK_URL:
-            return
-    rid = row.get(ID_COLUMN) or row.get("id")
-    base = _effective_base_url()
-    search_q = row.get("telefone") or str(rid)
-    approve = f"{base}/teams/approve?id={rid}&token={TEAMS_ACTION_TOKEN}"
-    reject  = f"{base}/teams/reject?id={rid}&token={TEAMS_ACTION_TOKEN}"
-    admin   = f"{base}/admin?q={search_q}"
-    # link para sugerir resposta via formulário seguro (/teams/suggest)
-    suggest = f"{base}/teams/suggest?id={rid}&token={TEAMS_ACTION_TOKEN}"
-    extra = ""
-    if route == "admin":
-        extra = "\n\n📣 **Interno:** acionar Vinícius (assunto administrativo/financeiro)."
-    elif route == "log":
-        extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
-    text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
-    _teams_post_card(
-        title="✅ Aprovação necessária — Lucenera",
-        text=text,
-        buttons=[
-            {"name": "✓ Aprovar", "url": approve},
-            {"name": "✗ Rejeitar", "url": reject},
-            {"name": "Sugerir resposta", "url": suggest},
-            {"name": "Abrir painel", "url": admin},
-        ],
-        channel=channel,
-    )
+    try:
+        if channel:
+            webhook_resolved = get_teams_webhook_for_channel(channel)
+            if not webhook_resolved:
+                logger.warning(f"[TEAMS NOTIFY] Falha: Nenhum webhook configurado para o canal: {channel} | telefone={telefone} | msg={mensagem}")
+                print(f"[TEAMS] Nenhum webhook configurado para o canal: {channel}", flush=True)
+                return
+        else:
+            if not TEAMS_WEBHOOK_URL:
+                logger.warning(f"[TEAMS NOTIFY] Falha: Nenhum webhook padrão configurado | telefone={telefone} | msg={mensagem}")
+                return
+        rid = row.get(ID_COLUMN) or row.get("id")
+        base = _effective_base_url()
+        search_q = row.get("telefone") or str(rid)
+        approve = f"{base}/teams/approve?id={rid}&token={TEAMS_ACTION_TOKEN}"
+        reject  = f"{base}/teams/reject?id={rid}&token={TEAMS_ACTION_TOKEN}"
+        admin   = f"{base}/admin?q={search_q}"
+        suggest = f"{base}/teams/suggest?id={rid}&token={TEAMS_ACTION_TOKEN}"
+        extra = ""
+        if route == "admin":
+            extra = "\n\n📣 **Interno:** acionar Vinícius (assunto administrativo/financeiro)."
+        elif route == "log":
+            extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
+        text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+        _teams_post_card(
+            title="✅ Aprovação necessária — Lucenera",
+            text=text,
+            buttons=[
+                {"name": "✓ Aprovar", "url": approve},
+                {"name": "✗ Rejeitar", "url": reject},
+                {"name": "Sugerir resposta", "url": suggest},
+                {"name": "Abrir painel", "url": admin},
+            ],
+            channel=channel,
+        )
+        logger.info(f"[TEAMS NOTIFY] Sucesso: telefone={telefone} | msg={mensagem} | status=notificado | canal={channel or 'default'}")
+    except Exception as e:
+        logger.warning(f"[TEAMS NOTIFY] Falha ao enviar para Teams: telefone={telefone}, msg={mensagem}, erro={e}")
+        print(f"[TEAMS NOTIFY] Falha ao enviar para Teams: telefone={telefone}, msg={mensagem}, erro={e}", flush=True)
 
 def _teams_format_text(row: dict) -> str:
     nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
     tel  = (row.get("telefone") or "—")
     meta = (row.get("mensagem") or {}).get("meta") or {}
 
+    context_block = meta.get("debounce_context_block")
     # preferir o preview do debounce, se presente
     preview = meta.get("debounce_batch_preview")
     batch_s = meta.get("debounce_batch_seconds")
     batch_n = meta.get("debounce_batch_count")
 
-    if preview:
+    if context_block:
+        msg = context_block.strip()
+    elif preview:
         header = []
         if batch_s: header.append(f"{batch_s}s")
         if batch_n: header.append(f"{batch_n} msgs")
@@ -2424,6 +2564,55 @@ def _montar_mensagem_setor_detalhada(
 # =====================================================================
 # PROCESSAMENTO INLINE (mantido e corrigido)
 # =====================================================================
+
+
+def _mark_row_status(
+    row: Optional[dict],
+    status: str,
+    *,
+    ai_draft: Optional[str] = None,
+    used_ai: Optional[bool] = None,
+    error: Optional[str] = None,
+    context_block: Optional[str] = None,
+) -> None:
+    if not isinstance(row, dict) or not status:
+        return
+    try:
+        row_id = row.get(ID_COLUMN) or row.get("id")
+    except Exception:
+        row_id = None
+
+    patch: Dict[str, Any] = {"status": status}
+    if ai_draft is not None:
+        patch["ai_draft"] = ai_draft
+    if used_ai is not None:
+        patch["used_ai"] = used_ai
+    if error is not None:
+        patch["error"] = error
+
+    if not context_block:
+        meta = (row.get("mensagem") or {}).get("meta") if isinstance(row.get("mensagem"), dict) else {}
+        if isinstance(meta, dict):
+            context_block = meta.get("debounce_context_block")
+
+    if context_block:
+        if _column_exists("contexto"):
+            patch["contexto"] = context_block
+        if _column_exists("mensagem_completa"):
+            patch["mensagem_completa"] = context_block
+
+    if row_id is not None:
+        _supabase_update_safe(row_id, patch)
+
+    row["status"] = status
+    if ai_draft is not None:
+        row["ai_draft"] = ai_draft
+    if used_ai is not None:
+        row["used_ai"] = used_ai
+    if error is not None:
+        row["error"] = error
+
+
 def processar_inline(row: dict) -> None:
     """
     Fluxo DM-only (apenas conversas diretas) com portão de contexto.
@@ -2438,6 +2627,7 @@ def processar_inline(row: dict) -> None:
                 "[INTERNAL] processar_inline chamado para mensagem interna; ignorando. tel=%s",
                 (row.get("telefone") or row.get("phone") or ""),
             )
+            _mark_row_status(row, "ignored_internal", used_ai=False)
             return
     except Exception as _e_internal_gate:
         print(">> aviso: falha ao avaliar is_internal_message em processar_inline:", _e_internal_gate, flush=True)
@@ -2446,6 +2636,7 @@ def processar_inline(row: dict) -> None:
     try:
         if _row_is_from_me(row):
             print("[IA] Ignorando mensagem from_me=True (empresa) em processar_inline.", flush=True)
+            _mark_row_status(row, "ignored_from_me", used_ai=False)
             return
     except Exception as e:
         # fallback defensivo: nunca derrubar o app por causa desse check
@@ -2457,6 +2648,7 @@ def processar_inline(row: dict) -> None:
         telc = (row.get("telefone") or "")
         if st == "ignored_blocked" or (telc and is_blocked_number(telc)):
             print(f"[BLOCKED] processar_inline chamado para número bloqueado; abortando. Tel: {telc}", flush=True)
+            _mark_row_status(row, "ignored_blocked", used_ai=False, error="Número bloqueado")
             return
     except Exception:
         pass
@@ -2577,18 +2769,13 @@ def processar_inline(row: dict) -> None:
 
         # Ignora grupos
         if in_group:
+            _mark_row_status(row, "ignored_group", used_ai=False, error="Processamento de grupos desativado")
             return
 
         # Bloqueio por número
         if _safe_is_blocked_number(telefone):
             # MANTER registro no Supabase (histórico) mas evitar qualquer processamento de IA.
-            # Não alteramos o campo `status` para não esconder a mensagem no painel; apenas
-            # garantimos que não será usada IA e limpamos rascunhos.
-            _supabase_update_safe(row_id, {
-                "used_ai": False,
-                "ai_draft": None,
-                "error": "Número em lista de bloqueio"
-            })
+            _mark_row_status(row, "ignored_blocked", used_ai=False, error="Número em lista de bloqueio")
             return
 
         debounced_messages: List[dict] = []
@@ -2629,21 +2816,34 @@ def processar_inline(row: dict) -> None:
         except Exception as _e_media:
             print(">> aviso: enrich_row_with_media_text falhou:", _e_media, flush=True)
 
+        audit_preview = (txt[:80] if txt else "").replace("\n", " ")
+        APP_LOG.info(
+            "INLINE_AUDIT_START id=%s tel=%s len=%d debounce=%s preview=%s",
+            row_id,
+            telefone or "-",
+            len(txt or ""),
+            bool(meta.get("debounce_batch_ids")),
+            audit_preview,
+        )
+
         if not (txt or "").strip():
-            _supabase_update_safe(row_id, {
-                "status": "ignored_empty_text",
-                "ai_draft": "Mensagem sem texto (pode ser mídia ou somente metadados).",
-                "used_ai": False
-            })
+            _mark_row_status(
+                row,
+                "ignored_empty_text",
+                ai_draft="Mensagem sem texto (pode ser mídia ou somente metadados).",
+                used_ai=False,
+            )
             _teams_notify_log(row, title="🗂️ Mensagem sem texto — log", status_tag="ignored_empty_text")
             return
 
         if is_finalizing_message(txt):
-            _supabase_update_safe(row_id, {
-                "ai_draft": None, "used_ai": False,
-                "status": "ignored_finalizer",
-                "error": "Mensagem de encerramento (ok/fechou)."
-            })
+            _mark_row_status(
+                row,
+                "ignored_finalizer",
+                ai_draft=None,
+                used_ai=False,
+                error="Mensagem de encerramento (ok/fechou).",
+            )
             _teams_notify_log(row, title="🧹 Finalizador detectado — log", status_tag="ignored_finalizer")
             return
 
@@ -2656,14 +2856,14 @@ def processar_inline(row: dict) -> None:
             "A mensagem é de cortesia/saudação/agradecimento (smalltalk). "
             "Responda de forma natural e simpática, sem prometer 'verificar' nada a menos que exista pedido técnico claro."
         )
-        # Exemplos para guiar o tom/estilo (few-shot). O prefixo 'Julia.' é um identificador
+        # Exemplos para guiar o tom/estilo (few-shot). O prefixo '**Julia:** ' é um identificador
         # interno e será mantido pelo sistema; portanto as respostas devem ser curtas, calorosas
         # e diretamente direcionadas ao cliente.
         smalltalk_examples = (
             "Exemplos de saudações e respostas curtas:\n"
-            "Usuário: Oi, tudo bem?\nAssistente: Julia. Oi! Tudo ótimo, e você?\n\n"
-            "Usuário: Obrigado!\nAssistente: Julia. Por nada — quando precisar, estou por aqui.\n\n"
-            "Usuário: Boa tarde\nAssistente: Julia. Boa tarde! Como posso ajudar hoje?"
+            "Usuário: Oi, tudo bem?\nAssistente: **Julia:** Oi! Tudo ótimo, e você?\n\n"
+            "Usuário: Obrigado!\nAssistente: **Julia:** Por nada — quando precisar, estou por aqui.\n\n"
+            "Usuário: Boa tarde\nAssistente: **Julia:** Boa tarde! Como posso ajudar hoje?"
         )
         smalltalk_hint = smalltalk_hint + "\n\n" + smalltalk_examples
 
@@ -2737,6 +2937,27 @@ def processar_inline(row: dict) -> None:
         chat_key = f"phone:{telefone}" if telefone else f"anon:{row_id}"
         user_identifier = telefone or chat_key
 
+        meta = mensagem_dict.get("meta") if isinstance(mensagem_dict, dict) else {}
+        context_block = ""
+        context_window = None
+        if isinstance(meta, dict):
+            context_block = (meta.get("debounce_context_block") or "").strip()
+            context_window = meta.get("debounce_context_window")
+
+        if context_block and row_id is not None:
+            context_update: Dict[str, Any] = {}
+            if _column_exists("contexto"):
+                context_update["contexto"] = context_block
+            if _column_exists("mensagem_completa"):
+                context_update["mensagem_completa"] = context_block
+            if context_update:
+                _supabase_update_safe(row_id, context_update)
+
+        row["_debounce_context_block"] = context_block
+        texto_para_ia = txt
+        if context_block:
+            texto_para_ia = f"{context_block}\n\nÚltima mensagem:\n{txt}" if txt else context_block
+
         try:
             if '_RUN_LOCKS' not in globals():
                 from collections import defaultdict
@@ -2744,7 +2965,12 @@ def processar_inline(row: dict) -> None:
 
             lock = _RUN_LOCKS[chat_key]
             with lock:
-                resposta = gerar_resposta_com_chatgpt(txt, user_identifier)
+                resposta = gerar_resposta_com_chatgpt(
+                    texto_para_ia,
+                    user_identifier,
+                    mensagem_id=row_id,
+                    telefone=telefone,
+                )
         except Exception as exc:
             print(">> erro: gerar_resposta_com_chatgpt falhou:", exc, flush=True)
             _supabase_update_safe(row_id, {
@@ -2757,6 +2983,11 @@ def processar_inline(row: dict) -> None:
             return
 
         if not resposta or not resposta.strip():
+            APP_LOG.warning(
+                "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s",
+                row_id,
+                telefone or "-",
+            )
             _supabase_update_safe(row_id, {
                 "status": "ignored_empty_ai",
                 "used_ai": False,
@@ -2774,6 +3005,12 @@ def processar_inline(row: dict) -> None:
             "history_source": "conversas",
             "used_tools": False,
         }
+        if context_block:
+            analysis_obj["debounce_context"] = {
+                "window_seconds": context_window,
+                "has_context": True,
+                "lines": len(context_block.splitlines()) if context_block else 0,
+            }
 
         # Saída
         if APPROVAL_MODE:

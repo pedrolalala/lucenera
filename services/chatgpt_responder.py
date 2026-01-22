@@ -9,9 +9,16 @@ import re
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
+else:  # pragma: no cover - usado apenas para ajudar tipagem estática
+    ChatCompletionMessageParam = Dict[str, Any]
 
 from supabase_client import get_supabase_client
+from supabase_helpers import registrar_falha
+from services.feedback_respostas import buscar_feedbacks_para_contexto
 from services.openai_helpers import cliente
 
 try:
@@ -33,11 +40,17 @@ DEFAULT_CHAT_MODEL = (
     or "gpt-4o-mini"
 )
 DEFAULT_TEMPERATURE = float(os.getenv("CHATGPT_RESPONSE_TEMPERATURE", "0.3"))
-CONVERSAS_TABLE = os.getenv("CONVERSAS_TABLE", "conversas")
-_HISTORY_LIMIT = 10
+TABLE_MESSAGES = os.getenv("TABLE_MESSAGES") or os.getenv("TABLE") or "mensagens"
+try:
+    _CTX_HISTORY_LIMIT = int(os.getenv("CTX_HISTORY_LIMIT", "12") or "12")
+except ValueError:
+    _CTX_HISTORY_LIMIT = 12
+_CTX_HISTORY_LIMIT = max(_CTX_HISTORY_LIMIT, 0)
 _MAX_HISTORY_CHARS = 1800
 DEBUG_PROMPTS = os.getenv("DEBUG_PROMPTS", "false").lower() in {"1", "true", "yes", "on"}
 _SHORT_MESSAGE_THRESHOLD = 12
+_FEEDBACK_EXAMPLE_LIMIT = 5
+_FEEDBACK_SYSTEM_GUIDANCE = "Considere os exemplos reais como referência de tom, clareza e decisão, mas use julgamento próprio."
 
 _SHORT_ACK_PHRASES = {
     "envio sim",
@@ -57,6 +70,7 @@ _SHORT_ACK_PHRASES = {
     "oi",
     "oi helena",
     "oi helena tudo bem",
+    "oi julia",
     "bom dia",
     "boa tarde",
     "boa noite",
@@ -66,6 +80,7 @@ _SHORT_ACK_PHRASES = {
     "perfeito",
     "maravilha",
     "valeu",
+    "tem alguma duvida",
 }
 
 _SHORT_ACK_SUBSTRINGS = {
@@ -77,6 +92,8 @@ _SHORT_ACK_SUBSTRINGS = {
     "boa noite",
     "oi helena",
     "oi julia",
+    "tem alguma duvida",
+    "tem alguma duvida?",
 }
 
 _SHORT_RESPONSE_VARIANTS = [
@@ -85,6 +102,111 @@ _SHORT_RESPONSE_VARIANTS = [
     "Combinado, fico de olho e te aviso.",
     "Tudo bem por aqui, qualquer novidade me chama.",
 ]
+
+
+_INTERNAL_AUTHOR_KEYWORDS = {
+    "bot",
+    "time",
+    "time interno",
+    "equipe",
+    "lucenera",
+    "atelier",
+    "projetos",
+    "admin",
+    "estoque",
+    "suporte",
+    "assistencia",
+    "assistente",
+    "team",
+    "teams",
+    "staff",
+    "manual",
+    "sugestao",
+    "julia",
+    "helena",
+    "vinicius",
+    "matheus",
+    "coordenacao",
+}
+
+_CLIENT_AUTHOR_KEYWORDS = {
+    "cliente",
+    "client",
+    "customer",
+    "contato",
+    "lead",
+    "usuario",
+}
+
+_INTERNAL_ORIGEM_HINTS = {
+    "bot",
+    "human",
+    "human_suggestion",
+    "internal",
+    "team",
+    "equipe",
+    "staff",
+}
+
+_CLIENT_ORIGEM_HINTS = {
+    "cliente",
+    "client",
+}
+
+
+def _build_short_reply(message: str, seed: str, reason: Optional[str] = None) -> str:
+    normalized = _normalize_for_match(message)
+    base_variants = _SHORT_RESPONSE_VARIANTS
+
+    if reason == "personal_check":
+        variants = [
+            "Bom dia! Estou bem tambem, e por ai?",
+            "Oi! Tudo certo por aqui",
+            "Tudo otimo, obrigada por perguntar :)",
+        ]
+        reply = _select_variant(variants, seed)
+        return _normalize_sentence_output(reply)
+
+    if "envio" in normalized or "enviei" in normalized:
+        variants = [
+            "Perfeito, vou acompanhar o envio e te retorno se faltar algo.",
+            "Recebido o envio, sigo monitorando por aqui.",
+            "Ótimo, acompanho o envio e te aviso de qualquer pendência.",
+        ]
+    elif "tem alguma duvida" in normalized or "tem alguma dúvida" in message.lower():
+        variants = [
+            "Tudo certo por aqui, obrigada por checar.",
+            "Tudo bem sim, obrigada por perguntar.",
+            "Tudo tranquilo, se surgir dúvida te aviso.",
+        ]
+    elif any(greeting in normalized for greeting in {"bom dia", "boa tarde", "boa noite"}):
+        if "bom dia" in normalized:
+            variants = [
+                "Bom dia! Tudo bem por aqui, sigo acompanhando o projeto.",
+                "Bom dia! Estou por aqui e te atualizo se aparecer novidade.",
+            ]
+        elif "boa tarde" in normalized:
+            variants = [
+                "Boa tarde! Está tudo certo por aqui, obrigada pelo contato.",
+                "Boa tarde! Sigo acompanhando e te aviso se precisar de algo.",
+            ]
+        else:
+            variants = [
+                "Boa noite! Tudo tranquilo por aqui, obrigada por avisar.",
+                "Boa noite! Continuo acompanhando e retorno caso surja algo.",
+            ]
+    elif any(term in normalized for term in {"oi", "ola"}):
+        variants = [
+            "Tudo certo por aqui, obrigada por chamar.",
+            "Oi! Estou acompanhando e te sinalizo se aparecer novidade.",
+        ]
+    else:
+        variants = base_variants
+
+    reply = _select_variant(variants, seed)
+    if not reply:
+        reply = base_variants[0]
+    return _normalize_sentence_output(reply)
 
 _FILLER_PATTERNS = [
     r"\bse precisar[^\.!\n]*$",
@@ -102,11 +224,22 @@ Você é a Julia, assistente de projetos da Lucenera — Atelier da Luz.
 - Fale como uma profissional experiente, consultiva e direta.
 - Responda em até duas frases curtas (três apenas se precisar indicar próximo passo).
 - Não use frases genéricas como "entendi", "ok", "certo", "recebido", "fico no aguardo", "qualquer coisa é só chamar".
-- Sempre inicie a mensagem final com "Julia." em linha própria, sem emojis e sem ponto de exclamação.
+ - Sempre inicie a mensagem final com "**Julia:** " seguido do texto, sem emojis e sem ponto de exclamação.
 - Reformule a mensagem do cliente com naturalidade e não a repita literalmente.
 - Se faltar informação essencial, faça apenas uma pergunta objetiva.
 - Se a mensagem for apenas confirmação/agradecimento, responda com "[SEM RESPOSTA NECESSÁRIA]".
 """.strip()
+
+_ORCHESTRATION_GUIDANCE = (
+    "Você receberá a mensagem original do cliente, o histórico recente e uma resposta sugerida gerada "
+    "pelo backend em Python. Reescreva a resposta final com clareza humana, priorizando o conteúdo real da "
+    "mensagem e do histórico para definir tom e foco. Trate a resposta sugerida apenas como ponto de partida "
+    "opcional; se ela estiver fora de contexto ou incompleta, construa uma nova resposta coerente. Evite "
+    "respostas genéricas como 'ok', 'entendi' ou 'certo'. Se a mensagem for apenas agradecimento, confirmação "
+    "ou saudação sem nova demanda, retorne exatamente '[SEM RESPOSTA NECESSÁRIA]'. Quando a mensagem do cliente for "
+    "muito curta ou informal, responda de modo acolhedor reconhecendo o contato e não prometa alinhar com a equipe "
+    "sem necessidade explícita."
+)
 
 
 def _normalize_for_match(value: Optional[str]) -> str:
@@ -133,55 +266,17 @@ def _build_system_prompt(dados: str, politicas: str) -> str:
     return "\n\n".join(section for section in sections if section)
 
 
-def _call_openai_for_response(
-    mensagem_cliente: str,
-    historico_conversa: Optional[str],
-    resposta_sugerida: str,
-    action_label: str,
-    dados: str,
-    politicas: str,
-    heuristicas: Optional[str] = None,
-) -> str:
-    historico_block = (historico_conversa or "(Sem histórico recente)").strip()
-    resposta_sugerida = resposta_sugerida.strip() or "(Sem resposta sugerida)"
-    historico_text = historico_block or "(Sem histórico recente)"
-    label_text = action_label or "default"
-
-    user_sections: List[str] = [
-        f"[MENSAGEM_CLIENTE]\n{mensagem_cliente}",
-        f"[INTENCAO_DETECTADA]\n{label_text}",
-        f"[RESPOSTA_SUGERIDA]\n{resposta_sugerida}",
-        f"[HISTORICO_CONVERSA]\n{historico_text}",
-    ]
-    if heuristicas:
-        user_sections.append(f"[GUIA_INTERNO]\n{heuristicas}")
-    user_prompt = "\n\n".join(user_sections)
-
-    orchestration_guidance = (
-        "Você receberá a mensagem original do cliente, o histórico recente e uma resposta sugerida gerada "
-        "pelo backend em Python. Reescreva a resposta final com clareza humana, priorizando o conteúdo real da "
-        "mensagem e do histórico para definir tom e foco. Trate a resposta sugerida apenas como ponto de partida "
-        "opcional; se ela estiver fora de contexto ou incompleta, construa uma nova resposta coerente. Evite "
-        "respostas genéricas como 'ok', 'entendi' ou 'certo'. Se a mensagem for apenas agradecimento, confirmação "
-        "ou saudação sem nova demanda, retorne exatamente '[SEM RESPOSTA NECESSÁRIA]'. Quando a mensagem do cliente for "
-        "muito curta ou informal, responda de modo acolhedor reconhecendo o contato e não prometa alinhar com a equipe "
-        "sem necessidade explícita."
-    )
-
-    system_prompt = "\n\n".join(filter(None, (_build_system_prompt(dados, politicas), orchestration_guidance)))
-
+def _call_openai_for_response(messages: List[ChatCompletionMessageParam]) -> str:
     if DEBUG_PROMPTS:
-        LOGGER.debug("Prompt ChatGPT - system:%s%sPrompt ChatGPT - user:%s%s",
-                     os.linesep, system_prompt, os.linesep, user_prompt)
+        LOGGER.debug("Prompt ChatGPT - payload:%s%s", os.linesep, messages)
+
+    typed_messages = cast(List["ChatCompletionMessageParam"], messages)
 
     completion = cliente.chat.completions.create(  # type: ignore[attr-defined]
         model=DEFAULT_CHAT_MODEL,
         temperature=DEFAULT_TEMPERATURE,
         max_tokens=512,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
+        messages=typed_messages,
     )
 
     choice = (completion.choices or [None])[0]
@@ -190,6 +285,82 @@ def _call_openai_for_response(
     if choice and isinstance(choice, dict):
         return _clean_text(choice.get("message", {}).get("content"))  # type: ignore[call-arg]
     return ""
+
+
+def _register_history_entry(chat_id: str, content: str, resposta: str) -> None:
+    chat_key = (chat_id or "").strip()
+    user_text = (content or "").strip()
+    assistant_text = (resposta or "").strip()
+
+    if not chat_key or not user_text or not assistant_text:
+        return
+
+    client = get_supabase_client()
+    if client is None:
+        if DEBUG_PROMPTS:
+            LOGGER.debug("Supabase indisponível ao registrar histórico para chat_id=%s", chat_key)
+        return
+
+    try:
+        existing = (
+            client.table(TABLE_MESSAGES)
+            .select("id,resposta")
+            .eq("chat_id", chat_key)
+            .eq("content", user_text)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        existing = None
+        LOGGER.debug("Consulta de histórico falhou para chat_id=%s: %s", chat_key, exc)
+
+    if existing and getattr(existing, "data", None):
+        row_data = existing.data[0]
+        if isinstance(row_data, dict):
+            resposta_stored = row_data.get("resposta")
+            has_resposta = bool(resposta_stored)
+            if isinstance(resposta_stored, str):
+                has_resposta = bool(resposta_stored.strip())
+            if not has_resposta:
+                try:
+                    client.table(TABLE_MESSAGES).update({"resposta": assistant_text}).eq("id", row_data.get("id")).execute()
+                    return
+                except Exception as exc:  # pragma: no cover - erro externo
+                    LOGGER.debug("Falha ao atualizar resposta histórica chat_id=%s: %s", chat_key, exc)
+
+    try:
+        client.table(TABLE_MESSAGES).insert(
+            {
+                "chat_id": chat_key,
+                "thread_id": chat_key,
+                "content": user_text,
+                "resposta": assistant_text,
+            }
+        ).execute()
+    except Exception as exc:  # pragma: no cover - erro externo
+        LOGGER.warning("Não foi possível registrar histórico chat_id=%s: %s", chat_key, exc)
+
+
+def _build_feedback_examples_block(examples: List[Dict[str, Any]]) -> Tuple[Optional[str], int]:
+    lines: List[str] = ["[EXEMPLOS_REAIS]"]
+    count = 0
+    for idx, example in enumerate(examples, start=1):
+        cliente = _clean_text(example.get("mensagem_cliente"))
+        resposta = _clean_text(example.get("resposta_humana_correta"))
+        if not cliente or not resposta:
+            continue
+        lines.append(f"Caso {idx}:")
+        lines.append(f'Cliente: "{cliente}"')
+        lines.append("Equipe respondeu:")
+        lines.append(f'"{resposta}"')
+        lines.append("")
+        count += 1
+    if count == 0:
+        return None, 0
+    if lines[-1] == "":
+        lines.pop()
+    return "\n".join(lines), count
 
 
 _ACTION_KEYWORDS: Dict[str, set[str]] = {
@@ -255,8 +426,10 @@ def _detect_action_label(message: str) -> str:
 
 _ACTION_OPENERS: Dict[str, List[str]] = {
     "default": [
-        "Ok",
-        "Certo",
+        "recebi sua mensagem",
+        "vi seu retorno",
+        "obrigada por sinalizar",
+        "estou acompanhando por aqui",
     ],
     "contato_direto": [
         "entendi que você quer falar diretamente",
@@ -303,10 +476,10 @@ _ACTION_OPENERS: Dict[str, List[str]] = {
 
 _ACTION_HANDOFFS: Dict[str, List[str]] = {
     "default": [
-        "vou confirmar com a equipe e te retorno em seguida.",
-        "vou alinhar com o time e te atualizo em breve.",
-        "vou verificar com a equipe e te posiciono assim que puder.",
-        "vou repassar internamente e volto com a resposta.",
+        "me avisa se quiser ajustar algo.",
+        "estou por aqui para o que precisar.",
+        "qualquer novidade te sinalizo por aqui.",
+        "sigo acompanhando e te mantenho no loop.",
     ],
     "contato_direto": [
         "vou checar se alguém pode te retornar por ligação.",
@@ -460,6 +633,8 @@ def _classify_short_message(message: str) -> Optional[str]:
     normalized = _normalize_for_match(message)
     if not normalized:
         return None
+    if _looks_like_personal_check(normalized):
+        return "personal_check"
     if any(term in normalized for term in _REQUEST_KEYWORDS):
         return None
     for keywords in _ACTION_KEYWORDS.values():
@@ -470,6 +645,7 @@ def _classify_short_message(message: str) -> Optional[str]:
     tokens = [tok for tok in normalized.split() if tok]
     if not tokens:
         return None
+    cleaned_tokens = [re.sub(r"[^a-z0-9]+", "", tok) or tok for tok in tokens]
     allowed_tokens = _PASSIVE_TOKEN_WHITELIST | {
         "tudo",
         "bem",
@@ -505,6 +681,12 @@ def _classify_short_message(message: str) -> Optional[str]:
         "bem",
         "estou",
         "estamos",
+        "tem",
+        "alguma",
+        "duvida",
+        "duvidas",
+        "tranquilo",
+        "tranquila",
     }
     match_type: Optional[str] = None
     if _is_passive_ack(message):
@@ -513,11 +695,35 @@ def _classify_short_message(message: str) -> Optional[str]:
         match_type = "phrase_match"
     elif any(fragment in normalized for fragment in _SHORT_ACK_SUBSTRINGS):
         match_type = "fragment_match"
-    if match_type and len(tokens) <= 7 and all(tok in allowed_tokens for tok in tokens):
+    if any(token and token not in allowed_tokens for token in cleaned_tokens):
+        return None
+    if match_type and len(tokens) <= 7:
         return match_type
-    if len(normalized) <= _SHORT_MESSAGE_THRESHOLD and len(tokens) <= 5 and all(tok in allowed_tokens for tok in tokens):
+    if len(normalized) <= _SHORT_MESSAGE_THRESHOLD and len(tokens) <= 5:
         return "length_tokens"
     return None
+
+
+_PERSONAL_CHECK_PATTERNS = [
+    re.compile(r"\b(tudo|td)\s+bem(?:\s+com\s+(?:voce|vc|ca|ce))?\b", re.IGNORECASE),
+    re.compile(r"\bcomo\s+(?:voce|vc|ca|ce)\s+(?:esta|ta|vai)\b", re.IGNORECASE),
+    re.compile(r"\btudo\s+certo\b", re.IGNORECASE),
+    re.compile(r"\b(e|e ai)\s+(?:voce|vc|ca|ce)\b", re.IGNORECASE),
+    re.compile(r"\bta\s+bem\b", re.IGNORECASE),
+]
+
+
+def _looks_like_personal_check(normalized: str) -> bool:
+    if not normalized:
+        return False
+    for pattern in _PERSONAL_CHECK_PATTERNS:
+        if pattern.search(normalized):
+            return True
+    if "tudo bem" in normalized and "?" in normalized:
+        return True
+    if normalized.startswith(("bom dia", "boa tarde", "boa noite")) and "tudo bem" in normalized:
+        return True
+    return False
 
 
 def _select_variant(options: List[str], seed: str) -> str:
@@ -641,90 +847,316 @@ def _clean_text(value: Optional[str]) -> str:
     return re.sub(r"\s+", " ", str(value)).strip()
 
 
-def _extract_text(row: Dict[str, object]) -> str:
-    """Extrai texto da linha da tabela de conversas considerando variações."""
-    candidatos: List[Optional[str]] = []
-    raw_mensagem = row.get("mensagem")
-    if isinstance(raw_mensagem, dict):
-        for key in ("text", "texto", "body", "content"):
-            candidatos.append(_clean_text(raw_mensagem.get(key)))  # type: ignore[arg-type]
-    elif isinstance(raw_mensagem, str):
-        candidatos.append(_clean_text(raw_mensagem))
-
-    for key in ("texto", "mensagem", "message", "body", "content"):
-        if key in row:
-            candidatos.append(_clean_text(row.get(key)))  # type: ignore[arg-type]
-
-    for val in candidatos:
-        if val:
-            return val
-    return ""
+def _coerce_bool(value: Any) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "t", "yes", "y", "sim"}:
+            return True
+        if lowered in {"0", "false", "f", "no", "n", "nao"}:
+            return False
+    return None
 
 
-def _infer_role(row: Dict[str, object]) -> str:
-    """Heurística para identificar se a mensagem veio do cliente ou da empresa."""
-    origem = str(row.get("origem") or row.get("role") or "").strip().lower()
-    if origem in {"bot", "empresa", "agent", "assistant"}:
-        return "empresa"
-
-    from_me = row.get("fromMe") or row.get("from_me") or row.get("sent_by_company")
-    if isinstance(from_me, bool) and from_me:
-        return "empresa"
-
-    direction = str(row.get("direction") or "").lower()
-    if direction in {"out", "outbound"}:
-        return "empresa"
-
-    return "cliente"
+def _role_from_author_hint(value: Any) -> Optional[str]:
+    normalized = _normalize_for_match(str(value)) if value is not None else ""
+    if not normalized:
+        return None
+    if normalized in _CLIENT_AUTHOR_KEYWORDS:
+        return "user"
+    if normalized in _INTERNAL_AUTHOR_KEYWORDS:
+        return "assistant"
+    if any(keyword in normalized for keyword in _CLIENT_AUTHOR_KEYWORDS):
+        return "user"
+    if any(keyword in normalized for keyword in _INTERNAL_AUTHOR_KEYWORDS):
+        return "assistant"
+    return None
 
 
-def _format_history_for_prompt(rows: List[Dict[str, object]]) -> str:
-    if not rows:
-        return ""
-    parts: List[str] = []
-    for item in rows:
-        text = _extract_text(item)
-        if not text:
-            continue
-        label = "Cliente" if _infer_role(item) == "cliente" else "Equipe"
-        parts.append(f"[{label}] {text}")
-    if not parts:
-        return ""
-    history = "\n".join(parts)
-    if len(history) > _MAX_HISTORY_CHARS:
-        history = history[-_MAX_HISTORY_CHARS:]
-        history = history.split("\n", 1)[-1]
-    return history
+def _role_from_origin_hint(value: Any) -> Optional[str]:
+    normalized = _normalize_for_match(str(value)) if value is not None else ""
+    if not normalized:
+        return None
+    if normalized in _CLIENT_ORIGEM_HINTS:
+        return "user"
+    if normalized in _INTERNAL_ORIGEM_HINTS:
+        return "assistant"
+    if "cliente" in normalized or "client" in normalized:
+        return "user"
+    if any(keyword in normalized for keyword in ("bot", "equipe", "time", "teams", "staff")):
+        return "assistant"
+    return None
 
 
-def _fetch_history(user_id: str, limit: int = _HISTORY_LIMIT) -> List[Dict[str, object]]:
-    client = get_supabase_client()
-    if client is None:
-        LOGGER.warning("Supabase indisponível ao buscar histórico do usuário=%s", user_id)
+def _infer_row_role(
+    row: Dict[str, Any],
+    *,
+    default: str = "user",
+    source: Optional[str] = None,
+    mensagem_meta: Optional[Dict[str, Any]] = None,
+) -> str:
+    from_me = _coerce_bool(row.get("fromMe"))
+    if from_me is None:
+        from_me = _coerce_bool(row.get("from_me"))
+    if from_me is True:
+        return "assistant"
+
+    direction = row.get("direction") or row.get("flow_direction")
+    direction_norm = _normalize_for_match(direction) if direction else ""
+    if direction_norm in {"out", "outgoing", "saida", "enviado"}:
+        return "assistant"
+    if direction_norm in {"in", "incoming", "entrada"} and default == "assistant":
+        default = "user"
+
+    metalist: List[Any] = []
+    if mensagem_meta and isinstance(mensagem_meta, dict):
+        metalist.extend(
+            [
+                mensagem_meta.get("role"),
+                mensagem_meta.get("author"),
+                mensagem_meta.get("source"),
+                mensagem_meta.get("origem"),
+            ]
+        )
+
+    hints: List[Any] = [
+        row.get("role"),
+        row.get("autor"),
+        row.get("author"),
+        row.get("author_name"),
+        row.get("username"),
+        row.get("nome"),
+        row.get("nome_display"),
+        row.get("display_name"),
+        row.get("sender"),
+        row.get("sender_name"),
+        row.get("origem"),
+        row.get("source"),
+        row.get("grupo"),
+        row.get("group"),
+        row.get("group_name"),
+        row.get("grupo_nome"),
+        row.get("autor_nome"),
+    ]
+
+    hints.extend(metalist)
+
+    for hint in hints:
+        role = _role_from_origin_hint(hint) or _role_from_author_hint(hint)
+        if role:
+            return role
+
+    if from_me is False:
+        return "user"
+
+    return "assistant" if default == "assistant" else "user"
+
+
+def _extract_row_messages(row: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if not isinstance(row, dict):
         return []
 
-    order_columns = ["created_at", "data", "createdAt", "timestamp"]
-    rows: List[Dict[str, object]] = []
-    for col in order_columns:
-        try:
-            resp = (
-                client.table(CONVERSAS_TABLE)
-                .select("*")
-                .eq("user_id", user_id)
-                .order(col, desc=True)
-                .limit(limit)
-                .execute()
-            )
-            rows = list(resp.data or [])
-            if rows:
+    entries: List[Dict[str, Any]] = []
+    seen: set[Tuple[str, str]] = set()
+    timestamp = (
+        row.get("created_at")
+        or row.get("createdAt")
+        or row.get("updated_at")
+        or row.get("updatedAt")
+        or row.get("data")
+        or row.get("timestamp")
+    )
+
+    def register(role: str, text: Any, source: str) -> None:
+        content = _clean_text(text if isinstance(text, str) else str(text) if text is not None else "")
+        if not content:
+            return
+        final_role = "assistant" if role == "assistant" else "user"
+        key = (final_role, content)
+        if key in seen:
+            return
+        seen.add(key)
+        entries.append(
+            {
+                "role": final_role,
+                "content": content,
+                "source": source,
+                "timestamp": timestamp,
+            }
+        )
+
+    content_text = row.get("content")
+    if content_text:
+        role = _infer_row_role(row, default="user", source="content")
+        register(role, content_text, "content")
+
+    resposta_text = row.get("resposta")
+    if resposta_text:
+        register("assistant", resposta_text, "resposta")
+
+    equipe_text = row.get("resposta_equipe") or row.get("resposta_humana")
+    if equipe_text:
+        register("assistant", equipe_text, "resposta_equipe")
+
+    final_out = row.get("final_out")
+    if final_out:
+        register("assistant", final_out, "final_out")
+
+    mensagem = row.get("mensagem")
+    if isinstance(mensagem, dict):
+        mensagem_text = mensagem.get("text") or mensagem.get("content") or mensagem.get("mensagem") or mensagem.get("body")
+        meta = mensagem.get("meta") if isinstance(mensagem.get("meta"), dict) else None
+        if mensagem_text:
+            default_role = "assistant" if _coerce_bool(row.get("fromMe") or row.get("from_me")) else "user"
+            role = _infer_row_role(row, default=default_role, source="mensagem", mensagem_meta=meta)
+            register(role, mensagem_text, "mensagem")
+    elif isinstance(mensagem, str):
+        role = _infer_row_role(row, default="user", source="mensagem")
+        register(role, mensagem, "mensagem")
+
+    texto_field = row.get("texto") or row.get("mensagem_texto")
+    if texto_field:
+        role = _infer_row_role(row, default="user", source="texto")
+        register(role, texto_field, "texto")
+
+    return entries
+
+
+def _slice_history_entries(
+    entries: List[Dict[str, Any]],
+    history_limit: int,
+) -> Tuple[List[Dict[str, Any]], int, int]:
+    if history_limit <= 0 or not entries:
+        return [], 0, 0
+
+    total_user = sum(1 for item in entries if item.get("role") == "user")
+    if total_user <= history_limit:
+        assistant_total = sum(1 for item in entries if item.get("role") == "assistant")
+        return entries, total_user, assistant_total
+
+    start_index = 0
+    user_count = 0
+    for idx in range(len(entries) - 1, -1, -1):
+        if entries[idx].get("role") == "user":
+            user_count += 1
+            if user_count > history_limit:
+                start_index = idx + 1
                 break
-        except Exception as exc:
-            LOGGER.debug("Falha ao ordenar por %s na tabela %s: %s", col, CONVERSAS_TABLE, exc)
-            rows = []
-    if not rows:
+        start_index = idx
+
+    trimmed = entries[start_index:]
+    user_trimmed = sum(1 for item in trimmed if item.get("role") == "user")
+    assistant_trimmed = sum(1 for item in trimmed if item.get("role") == "assistant")
+    return trimmed, user_trimmed, assistant_trimmed
+
+
+def _fetch_history_pairs(chat_id: str, limit: int = _CTX_HISTORY_LIMIT) -> List[Dict[str, Any]]:
+    client = get_supabase_client()
+    ident = _clean_text(chat_id)
+    if client is None or not ident or limit <= 0:
         return []
-    rows.reverse()
-    return rows
+
+    order_columns = ["created_at", "updated_at", "data", "createdAt", "timestamp", "id"]
+    filters: List[Tuple[str, str]] = [
+        ("chat_id", ident),
+        ("thread_id", ident),
+        ("telefone", ident),
+        ("group_id", ident),
+    ]
+    fetch_limit = max(limit * 2, limit, 1)
+
+    for field, value in filters:
+        for col in order_columns:
+            try:
+                resp = (
+                    client.table(TABLE_MESSAGES)
+                    .select("*")
+                    .eq(field, value)
+                    .order(col, desc=True)
+                    .limit(fetch_limit)
+                    .execute()
+                )
+            except Exception as exc:
+                LOGGER.debug(
+                    "Falha ao consultar histórico: tabela=%s filtro=%s=%s order=%s erro=%s",
+                    TABLE_MESSAGES,
+                    field,
+                    value,
+                    col,
+                    exc,
+                )
+                continue
+
+            raw_data = resp.data or []
+            data: List[Dict[str, Any]] = [item for item in raw_data if isinstance(item, dict)]
+            if data:
+                data.reverse()
+                return data[-fetch_limit:]
+
+    if DEBUG_PROMPTS:
+        LOGGER.debug("Histórico não encontrado para chat_id=%s", ident)
+    return []
+
+
+def build_chat_prompt(
+    chat_id: str,
+    nova_mensagem: str,
+    *,
+    system_prompt: str,
+    final_user_prompt: str,
+    history_limit: int = _CTX_HISTORY_LIMIT,
+) -> Tuple[List[ChatCompletionMessageParam], int]:
+    pairs = _fetch_history_pairs(chat_id, limit=history_limit)
+    messages: List[ChatCompletionMessageParam] = []
+    history_count = 0
+
+    system_content = system_prompt or JULIA_SYSTEM_PROMPT
+    messages.append({"role": "system", "content": system_content})
+
+    normalized_current = _clean_text(nova_mensagem)
+    history_entries: List[Dict[str, Any]] = []
+    for pair in pairs:
+        for entry in _extract_row_messages(pair):
+            role = entry.get("role") or "user"
+            content = entry.get("content") or ""
+            if not content:
+                continue
+            if normalized_current and role == "user" and content == normalized_current:
+                continue
+            history_entries.append(entry)
+
+    trimmed_history, user_history_count, assistant_history_count = _slice_history_entries(
+        history_entries,
+        history_limit,
+    )
+
+    for entry in trimmed_history:
+        role_value = entry.get("role") or "user"
+        content_value = entry.get("content") or ""
+        if not content_value:
+            continue
+        messages.append({"role": role_value, "content": content_value})
+
+    history_count = user_history_count
+
+    messages.append({"role": "user", "content": final_user_prompt})
+
+    if DEBUG_PROMPTS:
+        LOGGER.debug(
+            "Histórico incluído no prompt: chat_id=%s user_msgs=%d team_msgs=%d total_entries=%d limite=%d",
+            chat_id,
+            user_history_count,
+            assistant_history_count,
+            len(trimmed_history),
+            history_limit,
+        )
+
+    return messages, history_count
 
 
 def _strip_filler_phrases(text: str) -> str:
@@ -734,25 +1166,42 @@ def _strip_filler_phrases(text: str) -> str:
     return re.sub(r"\s{2,}", " ", out).strip(" .;,-")
 
 
-def _ensure_prefix(text: str, prefix: str = "Julia.") -> str:
+def _ensure_prefix(text: str, prefix: str = "**Julia:** ") -> str:
+    """Force the response to start with the assistant tag on the same line."""
     trimmed = (text or "").strip()
     if not trimmed:
-        return prefix
-    prefix_lower = prefix.lower()
-    if trimmed.lower().startswith(prefix_lower):
-        body = trimmed[len(prefix):].lstrip(" \n.")
-    else:
-        body = trimmed
-    body = body.replace("..", ".").strip()
-    if body:
-        return f"{prefix}\n{body}"
-    return prefix
+        return prefix.rstrip()
+
+    # Remove existing expected prefix variants to avoid duplication.
+    normalized = trimmed
+    known_prefixes = [
+        "**julia:**",
+        "julia.",
+        "julia:",
+        "julia -",
+    ]
+    lower_normalized = normalized.lower()
+    for known_prefix in known_prefixes:
+        if lower_normalized.startswith(known_prefix):
+            normalized = normalized[len(known_prefix):].lstrip(" \n-:")
+            break
+
+    body = " ".join(normalized.split())
+    if not body:
+        return prefix.rstrip()
+    return f"{prefix}{body}"
 
 
 # Esta função gera a resposta da Julia com base na mensagem do cliente e histórico recente.
 # O Python apenas monta o contexto (mensagem, intenção, histórico e resposta sugerida) e delega ao GPT
-# a redação final. O texto devolvido pelo modelo é usado como está, apenas garantindo o prefixo "Julia.".
-def gerar_resposta_com_chatgpt(mensagem_usuario: str, user_id: str) -> str:
+# a redação final. O texto devolvido pelo modelo é usado como está, apenas garantindo o prefixo "**Julia:** ".
+def gerar_resposta_com_chatgpt(
+    mensagem_usuario: str,
+    user_id: str,
+    *,
+    mensagem_id: Optional[str | int] = None,
+    telefone: Optional[str] = None,
+) -> str:
     """Gera resposta da Julia usando ChatGPT com prompts e histórico do Supabase."""
     mensagem = _clean_text(mensagem_usuario)
     uid = _clean_text(user_id)
@@ -760,9 +1209,40 @@ def gerar_resposta_com_chatgpt(mensagem_usuario: str, user_id: str) -> str:
         raise ValueError("mensagem_usuario vazio")
     if not uid:
         raise ValueError("user_id vazio")
+    msg_preview = mensagem[:50].replace("\n", " ")
+    LOGGER.debug(
+        "[DEBUG] Iniciando geração de resposta mensagem=%s user_id=%s preview=%s",
+        mensagem_id or uid,
+        uid,
+        msg_preview,
+    )
+    try:
+        return _gerar_resposta_impl(mensagem, uid, mensagem_id=mensagem_id, telefone=telefone)
+    except Exception as exc:
+        LOGGER.exception(
+            "[❌ ERRO] Falha ao gerar resposta para mensagem=%s user_id=%s",
+            mensagem_id or uid,
+            uid,
+        )
+        registrar_falha(
+            mensagem_id or uid,
+            motivo=str(exc),
+            telefone=telefone,
+            mensagem=mensagem,
+        )
+        raise
+
+
+def _gerar_resposta_impl(
+    mensagem: str,
+    uid: str,
+    *,
+    mensagem_id: Optional[str | int],
+    telefone: Optional[str],
+) -> str:
     short_reason = _classify_short_message(mensagem)
     if short_reason:
-        short_reply = _select_variant(_SHORT_RESPONSE_VARIANTS, f"{uid}:{mensagem}:short")
+        short_reply = _build_short_reply(mensagem, f"{uid}:{mensagem}:short", short_reason)
         LOGGER.info(
             "Resposta curta gerada por heuristica para user_id=%s (motivo=%s)",
             uid,
@@ -776,9 +1256,6 @@ def gerar_resposta_com_chatgpt(mensagem_usuario: str, user_id: str) -> str:
 
     dados = _prompt_dados()
     politicas = _prompt_politicas()
-    history_rows = _fetch_history(uid)
-    history_block = _format_history_for_prompt(history_rows)
-
     seed = f"{uid}:{mensagem}"
     resposta_base = _compose_lead_sentence(action_label, seed)
     if not resposta_base:
@@ -808,20 +1285,75 @@ def gerar_resposta_com_chatgpt(mensagem_usuario: str, user_id: str) -> str:
     heuristicas.append(
         "Se a mensagem for apenas cumprimento ou confirmação, reconheça com naturalidade sem prometer alinhamento com a equipe."
     )
+
+    feedback_intent = action_label if action_label and action_label != "default" else None
+    feedback_examples: List[Dict[str, Any]] = []
+    feedback_block: Optional[str] = None
+    feedback_count = 0
+    try:
+        feedback_examples = buscar_feedbacks_para_contexto(
+            intencao=feedback_intent,
+            categoria=feedback_intent,
+            limite=_FEEDBACK_EXAMPLE_LIMIT,
+        )
+    except Exception:
+        LOGGER.exception("Falha ao buscar feedback_respostas para acao=%s", action_label)
+        feedback_examples = []
+
+    if feedback_examples:
+        feedback_block, feedback_count = _build_feedback_examples_block(feedback_examples)
+    if feedback_block:
+        heuristicas.append(
+            "Use os exemplos reais como referência de tom, clareza e decisão, aplicando julgamento próprio."
+        )
+        LOGGER.info(
+            "Feedback exemplos anexados ao prompt count=%s acao=%s",
+            feedback_count,
+            feedback_intent or "default",
+        )
+
     heuristicas_text = "\n".join(heuristicas)
 
+    system_sections = [_build_system_prompt(dados, politicas), _ORCHESTRATION_GUIDANCE]
+    if feedback_block:
+        system_sections.append(_FEEDBACK_SYSTEM_GUIDANCE)
+    system_prompt = "\n\n".join(section for section in system_sections if section)
+
+    label_text = action_label or "default"
+    resposta_text = resposta_base.strip() or "(Sem resposta sugerida)"
+
+    user_sections = [
+        f"[MENSAGEM_CLIENTE]\n{mensagem}",
+        f"[INTENCAO_DETECTADA]\n{label_text}",
+        f"[RESPOSTA_SUGERIDA]\n{resposta_text}",
+    ]
+    if feedback_block:
+        user_sections.insert(0, feedback_block)
+    if heuristicas_text:
+        user_sections.append(f"[GUIA_INTERNO]\n{heuristicas_text}")
+    final_user_prompt = "\n\n".join(user_sections)
+
     try:
-        content = _call_openai_for_response(
-            mensagem_cliente=mensagem,
-            historico_conversa=history_block,
-            resposta_sugerida=resposta_base,
-            action_label=action_label,
-            dados=dados,
-            politicas=politicas,
-            heuristicas=heuristicas_text,
+        messages, history_count = build_chat_prompt(
+            chat_id=uid,
+            nova_mensagem=mensagem,
+            system_prompt=system_prompt,
+            final_user_prompt=final_user_prompt,
         )
+        if DEBUG_PROMPTS:
+            LOGGER.debug(
+                "Mensagens preparadas para ChatGPT: total=%d (histórico=%d) mensagem=%s",
+                len(messages),
+                history_count,
+                mensagem_id or uid,
+            )
+        content = _call_openai_for_response(messages)
     except Exception:  # pragma: no cover - dependência externa
-        LOGGER.exception("Falha ao chamar ChatGPT para user_id=%s", uid)
+        LOGGER.exception(
+            "Falha ao chamar ChatGPT para user_id=%s mensagem=%s",
+            uid,
+            mensagem_id or uid,
+        )
         raise
 
     if not content:
@@ -830,8 +1362,14 @@ def gerar_resposta_com_chatgpt(mensagem_usuario: str, user_id: str) -> str:
         LOGGER.info("Modelo sinalizou ausência de resposta para user_id=%s", uid)
         return ""
     content = _clean_text(content)
-    LOGGER.info("Resposta gerada via GPT para user_id=%s (acao=%s)", uid, action_label)
+    _register_history_entry(uid, mensagem, content)
+    LOGGER.info(
+        "Resposta gerada via GPT para user_id=%s mensagem=%s (acao=%s)",
+        uid,
+        mensagem_id or uid,
+        action_label,
+    )
     return _ensure_prefix(content)
 
 
-__all__ = ["gerar_resposta_com_chatgpt"]
+__all__ = ["gerar_resposta_com_chatgpt", "build_chat_prompt"]

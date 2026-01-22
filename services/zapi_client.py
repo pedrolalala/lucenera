@@ -119,6 +119,14 @@ def send_text_from_row(row: Dict[str, Any], message: str) -> bool:
     return False
 
 
+def enviar_mensagem_wa(*, telefone: Optional[str], mensagem: str) -> bool:
+    """Envia mensagem de texto direto para um telefone via Z-API."""
+    numero = (telefone or "").strip()
+    if not numero:
+        return False
+    return send_text_to(phone=numero, message=mensagem)
+
+
 def _media_headers() -> Dict[str, str]:
     headers: Dict[str, str] = {}
     if ZAPI_TOKEN:
