@@ -78,6 +78,156 @@
 #         return "Token inválido", 403
 ## --- Removido bloco com erro de indentação e returns fora de função ---
 ## --- Fim da limpeza de código legado ---
+
+# === IMPORTS NECESSÁRIOS ===
+from __future__ import annotations
+import os
+import sys
+import json
+import uuid
+import time
+import threading
+import logging
+import unicodedata
+import re
+import platform
+import subprocess
+from time import sleep
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+from typing import Optional, Dict, Any, List, Tuple, Sequence
+
+from dotenv import load_dotenv, find_dotenv
+from flask import Flask, render_template, render_template_string, request, Response, jsonify, redirect, url_for
+import requests
+
+from helpers import *
+
+# === CONFIGURAÇÃO BÁSICA ===
+BASE_DIR = Path(__file__).resolve().parent
+_DOTENV_PATH = find_dotenv(usecwd=True)
+if _DOTENV_PATH:
+    load_dotenv(_DOTENV_PATH)
+else:
+    load_dotenv()
+
+app = Flask(
+    __name__,
+    template_folder=str(BASE_DIR / "templates"),
+    static_folder=str(BASE_DIR / "static"),
+)
+
+# === IMPORTS DE SERVIÇOS ===
+from services.zapi_client import send_text_from_row, send_text_to
+from services.supabase_client import get_supabase_client
+
+# Configurações básicas necessárias para app.py funcionar
+supabase = get_supabase_client()
+TABLE = os.getenv("SUPABASE_TABLE", "mensagens")
+ID_COLUMN = os.getenv("SUPABASE_ID_COLUMN", "id_num")
+APPROVAL_MODE = os.getenv("APPROVAL_MODE", "false").lower() in ("1", "true", "yes")
+OUTGOING_ENABLED = os.getenv("OUTGOING_ENABLED", "true").lower() in ("1", "true", "yes")
+FORCE_PROCESS_ALL_GROUPS = os.getenv("FORCE_PROCESS_ALL_GROUPS", "false").lower() in ("1", "true", "yes")
+CTX_HISTORY_LIMIT = int(os.getenv("CTX_HISTORY_LIMIT", "10"))
+DEBOUNCE_SECONDS = int(os.getenv("DEBOUNCE_SECONDS", "45"))
+TEAMS_ACTION_TOKEN = os.getenv("TEAMS_ACTION_TOKEN", "")
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "./uploads")
+
+# === FUNÇÕES AUXILIARES ===
+def _clean_env(name: str) -> Optional[str]:
+    """Get environment variable, stripping whitespace and returning None if empty"""
+    val = os.getenv(name)
+    if not val:
+        return None
+    val = val.strip()
+    return val if val else None
+
+
+def _to_bool(val: Any, default: bool = False) -> bool:
+    """Convert value to boolean"""
+    if val is None:
+        return default
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return val.lower().strip() in ("1", "true", "yes", "on")
+    return bool(val)
+
+
+def _to_int(val: Any, default: int = 0) -> int:
+    """Convert value to integer with fallback"""
+    try:
+        return int(val) if val is not None else default
+    except (ValueError, TypeError):
+        return default
+
+
+def _parse_iso_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except Exception:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _safe_row_id(row: Optional[dict]) -> Optional[int]:
+    if not isinstance(row, dict):
+        return None
+    for key in (ID_COLUMN, "id", "id_num"):
+        val = row.get(key)
+        if val is None:
+            continue
+        try:
+            if isinstance(val, int):
+                return val
+            sval = str(val).strip()
+            if sval:
+                return int(float(sval))
+        except Exception:
+            continue
+    return None
+
+
+def _format_debounce_timestamp(row: dict) -> str:
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    for candidate in (
+        row.get("data"),
+        meta.get("timestamp_iso_sao_paulo"),
+        meta.get("timestamp_iso_utc"),
+    ):
+        dt = _parse_iso_datetime(candidate)
+        if dt:
+            try:
+                from zoneinfo import ZoneInfo  # Python 3.9+
+                dt = dt.astimezone(ZoneInfo("America/Sao_Paulo"))
+            except Exception:
+                pass
+            return dt.strftime("%H:%M")
+    return ""
+
+
+def _cast_key_for_query(val: str):
+    if ID_COLUMN.lower() in {"id","id_num","idnum","numero","pk","num"}:
+        try: return int(val)
+        except Exception: return val
+    return val
+
+
+def _supabase_update_safe(row_id, data):
+    """Atualiza dados no Supabase com tratamento de erro básico"""
+    if not supabase:
+        return False
+    try:
+        result = supabase.table(TABLE).update(data).eq(ID_COLUMN, row_id).execute()
+        return True
+    except Exception as e:
+        print(f">> Erro ao atualizar Supabase: {e}", flush=True)
+        return False
+
 _MEDIA_PLACEHOLDERS = {
     "image": "[Imagem recebida]",
     "photo": "[Imagem recebida]",

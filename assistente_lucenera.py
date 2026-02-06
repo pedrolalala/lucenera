@@ -55,7 +55,7 @@ def _get_vs_namespace():
         return _client.vector_stores
     return None
 
-def _get_file_batches(ns) -> Optional[object]:
+def _get_file_batches(ns):
     return getattr(ns, "file_batches", None)
 
 # -----------------------------
@@ -79,13 +79,10 @@ def _criar_vector_store_com_arquivos(paths: list[Path]) -> Optional[str]:
     vs = vs_api.create(name="Lucenera Base v1")
 
     if paths:
-        file_batches = _get_file_batches(vs_api)
-        if file_batches is None:
-            print("[assistente_lucenera] SDK sem suporte a 'file_batches'; vector store criado vazio.")
-        else:
+        try:
             file_objs = [open(p, "rb") for p in paths]
             try:
-                file_batches.upload_and_poll(
+                vs_api.file_batches.upload_and_poll(
                     vector_store_id=vs.id,
                     files=file_objs,
                 )
@@ -97,6 +94,8 @@ def _criar_vector_store_com_arquivos(paths: list[Path]) -> Optional[str]:
                         f.close()
                     except Exception:
                         pass
+        except AttributeError:
+            print("[assistente_lucenera] SDK sem suporte a 'file_batches'; vector store criado vazio.")
     else:
         print("[assistente_lucenera] Nenhum arquivo disponível. Vector Store criado vazio.")
 
@@ -145,18 +144,19 @@ def criar_assistente(vector_store_id: Optional[str]):
 
 
     tools = list(minhas_tools)
-    tool_resources = {}
-
+    kwargs = {}
     if vector_store_id:
         tools.append({"type": "file_search"})
-        tool_resources = {"file_search": {"vector_store_ids": [vector_store_id]}}
+        # O SDK espera um objeto ToolResources, não um dict puro
+        # Portanto, passamos apenas se vector_store_id existir
+        kwargs["tool_resources"] = {"file_search": {"vector_store_ids": [vector_store_id]}}
 
     return _client.beta.assistants.create(
         name="Atendente Lucenera",
         instructions=instrucoes,
         model=OPENAI_MODEL,
         tools=tools,
-        tool_resources=tool_resources or None,
+        **kwargs
     )
 
 # -----------------------------

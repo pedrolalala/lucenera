@@ -13,7 +13,6 @@ ZAPI_BASE = os.getenv("ZAPI_BASE", "").rstrip("/")
 ZAPI_SENDTEXT_PATH = os.getenv("ZAPI_SENDTEXT_PATH", "/message/sendText")
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN", "")  # usado na URL
 ZAPI_ID_INSTANCE = os.getenv("ZAPI_ID_INSTANCE", "")
-ZAPI_ID_INSTANCE = os.getenv('ZAPI_ID_INSTANCE', '')  # New variable for updated instance
 ZAPI_CLIENT_TOKEN = os.getenv("ZAPI_CLIENT_TOKEN", "")  # ← CORRIGIDO: nome da variável e valor padrão
 ZAPI_TIMEOUT = float(os.getenv("ZAPI_TIMEOUT", "15"))
 ZAPI_TRY_ALIASES = os.getenv("ZAPI_TRY_ALIASES", "false").lower() in ("1", "true", "yes")
