@@ -1,27 +1,62 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # type: ignore
+
 from __future__ import annotations
+
+# === IMPORTS PADRÃO (biblioteca Python) ===
+import os
+import sys
+import json
+import uuid
+import time
+import threading
+import logging
+import unicodedata
+import re
+import platform
+import subprocess
 from time import sleep
-from helpers import *
-import os, json, uuid, time, threading, logging, unicodedata, re, sys
-import platform, subprocess  # para matar ngrok e fortalecer autostart
-from datetime import datetime, timezone, timedelta
-try:
-    from zoneinfo import ZoneInfo  # Python 3.9+
-except Exception:
-    ZoneInfo = None
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List, Tuple, Sequence
 
+# === IMPORTS DE TERCEIROS ===
 from dotenv import load_dotenv, find_dotenv
 from flask import Flask, render_template, render_template_string, request, Response, jsonify, redirect, url_for
-import requests  # Teams, ngrok, Z-API
+import requests
 
-# === OpenAI/serviços
+# === IMPORTS LOCAIS (helpers e services) ===
+from helpers import *
+
+
+# === CONFIGURAR LOGGER (DEPOIS de importar logging) ===
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+    _handler.setFormatter(_formatter)
+    logger.addHandler(_handler)
+
+# === LOGGER DE ARQUIVO (APP_LOG) ===
+APP_LOG = logging.getLogger("app_log")
+APP_LOG.setLevel(logging.INFO)
+if not APP_LOG.handlers:
+    _file_handler = logging.FileHandler(str(Path(__file__).resolve().parent / "app.log"), encoding="utf-8")
+    _file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+    _file_handler.setFormatter(_file_formatter)
+    APP_LOG.addHandler(_file_handler)
+
+# === IMPORTS DE ROTAS (DEPOIS de configurar logger) ===
+from routes.teams_suggest import teams_suggest_bp
+
+# === IMPORTS DE SERVIÇOS ===
 from services.openai_helpers import (
     cliente,
-    enrich_row_with_media_text,  # pré-processamento de mídia
+    enrich_row_with_media_text,
 )
+
 try:
     from services.chatgpt_responder import (
         gerar_resposta_com_chatgpt,
@@ -71,14 +106,15 @@ app = Flask(
     template_folder=str(BASE_DIR / "templates"),
     static_folder=str(BASE_DIR / "static"),
 )
+app.register_blueprint(teams_suggest_bp, url_prefix='/teams')
+ # === DEBUG: Mostrar todas as rotas registradas ===
+logger.info("=" * 60)
+logger.info("ROTAS REGISTRADAS NO FLASK:")
+for rule in app.url_map.iter_rules():
+    methods = ','.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))
+    logger.info(f"  [{methods}] {rule.rule} -> {rule.endpoint}")
+logger.info("=" * 60)
 log = logging.getLogger("werkzeug")
-APP_LOG = logging.getLogger("lucenera")
-APP_LOG.setLevel(logging.INFO)
-if not APP_LOG.handlers:
-    _handler = logging.StreamHandler()
-    _formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
-    _handler.setFormatter(_formatter)
-    APP_LOG.addHandler(_handler)
 # === Equipes / contatos internos (uso interno; não expor ao cliente)
 from services.config_equipes import (
     EQUIPES,
@@ -631,7 +667,7 @@ MATHEUS_PHONE  = _clean_env("MATHEUS_PHONE")  or _clean_env("LOGISTICS_PHONE")
 
 # Z-API
 ZAPI_BASE = _clean_env("ZAPI_BASE") or "https://api.z-api.io"
-ZAPI_INSTANCE = _clean_env("ZAPI_INSTANCE") or ""
+ZAPI_ID_INSTANCE = _clean_env("ZAPI_ID_INSTANCE") or ""
 ZAPI_TOKEN = _clean_env("ZAPI_TOKEN") or ""
 ZAPI_CLIENT_TOKEN = _clean_env("ZAPI_CLIENT_TOKEN") or ""
 PUBLIC_BASE_URL = _clean_env("PUBLIC_BASE_URL") or _clean_env("APP_PUBLIC_URL")
@@ -1212,7 +1248,31 @@ def _extract_text_from_payload(p: dict) -> str:
         return f"[Áudio recebido: {aud['audioUrl']}]"
     doc = p.get("document")
     if isinstance(doc, dict) and doc.get("documentUrl"):
-        return f"[Documento recebido: {doc['documentUrl']}]"
+        # Tenta extrair nome do arquivo e logar análise
+        file_url = doc.get("documentUrl")
+        file_name = doc.get("fileName") or doc.get("file_name") or "(sem_nome)"
+        telefone = p.get("telefone") or p.get("phone") or p.get("chat_phone") or ""
+        message_id = p.get("messageId") or p.get("message_id") or (doc.get("messageId") or doc.get("message_id")) or ""
+        import logging, time
+        logger = logging.getLogger("lucenera.document")
+        start_time = time.time()
+        logger.info(f"[DOC_ANALYSIS_START] telefone={telefone} id={message_id} file={file_name} url={file_url}")
+        # Aqui seria o ponto de extração real do texto do documento (PDF/DOCX)
+        # Supondo que helpers.extract_text_from_document seja chamado em outro ponto do pipeline
+        # Para logging, simulamos extração:
+        extracted_text = None
+        try:
+            # Se houver helper real, chame aqui e capture o texto extraído
+            # extracted_text = extract_text_from_document(file_url)
+            pass
+        except Exception as e:
+            logger.error(f"[DOC_ANALYSIS_ERROR] telefone={telefone} id={message_id} file={file_name} url={file_url} erro={e}")
+            return f"[Documento recebido: {file_url}]"
+        # Simulação: não extraímos texto aqui, mas logamos o recebimento
+        text_size = len(extracted_text) if extracted_text else 0
+        elapsed = time.time() - start_time
+        logger.info(f"[DOC_ANALYSIS_END] telefone={telefone} id={message_id} file={file_name} url={file_url} text_size={text_size} elapsed={elapsed:.2f}s status=ok")
+        return f"[Documento recebido: {file_url}]"
     return ""
 
 
@@ -1526,8 +1586,8 @@ def _chat_key_from_payload(p: dict) -> str:
 # =====================================================================
 def _zapi_update_webhooks(base_url: str, webhook_path: str = WEBHOOK_PATH) -> bool:
     # Validate required configuration
-    if not (ZAPI_INSTANCE and ZAPI_TOKEN and ZAPI_CLIENT_TOKEN and base_url and base_url.startswith("https://")):
-        print(">> Z-API: dados insuficientes p/ atualizar webhooks (precisa https + INSTANCE + ZAPI_TOKEN + ZAPI_CLIENT_TOKEN).", flush=True)
+    if not (ZAPI_ID_INSTANCE and ZAPI_TOKEN and ZAPI_CLIENT_TOKEN and base_url and base_url.startswith("https://")):
+        print(">> Z-API: dados insuficientes p/ atualizar webhooks (precisa https + ID_INSTANCE + ZAPI_TOKEN + ZAPI_CLIENT_TOKEN).", flush=True)
         return False
 
     target = f"{base_url.rstrip('/')}{webhook_path}"
@@ -1536,11 +1596,11 @@ def _zapi_update_webhooks(base_url: str, webhook_path: str = WEBHOOK_PATH) -> bo
     notify = (ZAPI_WEBHOOK_MODE != "receive_only")
 
     endpoints: List[Tuple[str, Dict[str, Any]]] = [
-        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-every-webhooks", {"value": target, "notifySentByMe": notify}),
-        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received", {"webhookUrl": target}),
+        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-every-webhooks", {"value": target, "notifySentByMe": notify}),
+        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received", {"webhookUrl": target}),
     ]
     if notify:
-        endpoints.append((f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery", {"webhookUrl": target}))
+        endpoints.append((f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery", {"webhookUrl": target}))
 
     ok_any = False
     last_status = None
@@ -2163,25 +2223,36 @@ def _teams_format_text(row: dict) -> str:
     nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
     tel  = (row.get("telefone") or "—")
     meta = (row.get("mensagem") or {}).get("meta") or {}
+    original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
 
-    context_block = meta.get("debounce_context_block")
-    # preferir o preview do debounce, se presente
-    preview = meta.get("debounce_batch_preview")
-    batch_s = meta.get("debounce_batch_seconds")
-    batch_n = meta.get("debounce_batch_count")
+    # Safe navigation for media interpretations
+    audio_interpretation = meta.get("audio_interpretation")
+    audio_transcript = meta.get("audio_transcript")
+    image_interpretation = meta.get("image_interpretation")
+    video_transcript = meta.get("video_transcript")
 
-    if context_block:
-        msg = context_block.strip()
-    elif preview:
-        header = []
-        if batch_s: header.append(f"{batch_s}s")
-        if batch_n: header.append(f"{batch_n} msgs")
-        prefix = f"({', '.join(header)}) " if header else ""
-        msg = f"{prefix}{preview}"
+    # Prioridade: áudio > imagem > vídeo
+    if audio_interpretation:
+        # Áudio: mostra resumo e transcrição se houver
+        bloco = f"🎤 [Áudio] {audio_interpretation}"
+        if audio_transcript:
+            bloco += f"\n\n📝 Transcrição: {audio_transcript}"
+        conteudo = bloco
+    elif image_interpretation:
+        conteudo = f"🖼️ [Imagem] {image_interpretation}"
+    elif video_transcript:
+        conteudo = f"🎥 [Vídeo] {video_transcript}"
     else:
-        msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+        conteudo = original_msg or "(sem conteúdo visível)"
 
-    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n🛎️ **Mensagem:** {msg}"
+    # Formatação clara para Teams
+    conteudo = conteudo.strip()
+    if conteudo:
+        conteudo = f"━━━━━━━━━━━━━━━━━━\n{conteudo}\n━━━━━━━━━━━━━━━━━━"
+    else:
+        conteudo = "(sem conteúdo visível)"
+
+    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n{conteudo}"
 
 
 def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | None = None) -> None:
@@ -3376,27 +3447,28 @@ def _cast_key_for_query(val: str):
         except Exception: return val
     return val
 
-@app.get("/teams/approve")
-def teams_approve():
-    # Debug: log args and token comparison to help diagnose missing approvals
-    try:
-        incoming_args = dict(request.args)
-    except Exception:
-        incoming_args = {}
-    incoming_token = (request.args.get("token") or "")
-    print(f">> /teams/approve called args={incoming_args}", flush=True)
-    if incoming_token != (TEAMS_ACTION_TOKEN or ""):
-        print(f">> /teams/approve: token mismatch incoming={incoming_token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-        return "forbidden", 403
-    rid = request.args.get("id")
-    if not rid:
-        return "id obrigatório", 400
-    if not supabase:
-        return "supabase indisponível", 500
-    try:
-        row = supabase.table(TABLE).select("*").eq(ID_COLUMN, _cast_key_for_query(rid)).single().execute().data
-    except Exception as e:
-        return f"erro ao buscar: {e}", 500
+## --- LEGACY /teams/suggest GET route commented out to ensure only blueprint is active ---
+# @app.get("/teams/suggest")
+# def teams_suggest():
+#     from flask import render_template_string, request
+#     msg_id = request.args.get("id")
+#     token = request.args.get("token")
+#     # Debug: log incoming args for diagnosis
+#     try:
+#         incoming_args = dict(request.args)
+#     except Exception:
+#         incoming_args = {}
+#     print(f">> /teams/suggest (GET) called args={incoming_args}", flush=True)
+#     if token != (TEAMS_ACTION_TOKEN or ""):
+#         print(f">> /teams/suggest (GET): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
+#         return "Token inválido", 403
+#
+#     # Página simples de sugestão
+#     html = f"""
+#     <html>
+#     <head>
+#         <meta charset='utf-8'>
+#         <title>Sugerir resposta - Lucenera</title>
     if not row:
         return "não encontrado", 404
     texto = (row.get("ai_draft") or "").strip()
@@ -3427,17 +3499,17 @@ def teams_approve():
             print(">> aviso: falha ao registrar fala do bot (approve):", e, flush=True)
     return redirect(url_for("admin"))
 
-@app.get("/teams/reject")
-def teams_reject():
-    if (request.args.get("token") or "") != (TEAMS_ACTION_TOKEN or ""):
-        return "forbidden", 403
-    rid = request.args.get("id")
-    if not rid:
-        return "id obrigatório", 400
-    if not supabase:
-        return "supabase indisponível", 500
-    _supabase_update_safe(_cast_key_for_query(rid), {"approved": False, "status": "rejected"})
-    return redirect(url_for("admin"))
+# @app.get("/teams/reject")
+# def teams_reject():
+#     if (request.args.get("token") or "") != (TEAMS_ACTION_TOKEN or ""):
+#         return "forbidden", 403
+#     rid = request.args.get("id")
+#     if not rid:
+#         return "id obrigatório", 400
+#     if not supabase:
+#         return "supabase indisponível", 500
+#     _supabase_update_safe(_cast_key_for_query(rid), {"approved": False, "status": "rejected"})
+#     return redirect(url_for("admin"))
 # =========================
 # TEAMS - Sugerir resposta manual
 # =========================
@@ -3503,66 +3575,109 @@ def teams_suggest():
     return render_template_string(html)
 
 
-@app.post("/teams/suggest")
-def teams_suggest_submit():
-    from flask import request
-    msg_id = request.form.get("id")
-    token = request.form.get("token")
-    texto = request.form.get("texto") or ""
-    # Debug: log form args and token status for diagnosis
-    try:
-        form_args = dict(request.form)
-    except Exception:
-        form_args = {}
-    print(f">> /teams/suggest (POST) called form={form_args}", flush=True)
-    if token != (TEAMS_ACTION_TOKEN or ""):
-        print(f">> /teams/suggest (POST): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-        return "Token inválido", 403
-    if not texto.strip():
-        return "Mensagem vazia", 400
 
-    rid = _cast_key_for_query(msg_id)
-
-    # Marca sugestão no Supabase primeiro
-    _supabase_update_safe(rid, {
-        "manual_reply": texto,
-        "status": "suggested",
-        "approved": False,
-        "approved_by": "Teams",
-        "origem": "human"
-    })
-
-    # Tenta buscar a linha para enviar (se OUTGOING_ENABLED)
-    row = None
-    try:
-        if supabase:
-            row = supabase.table(TABLE).select("*").eq(ID_COLUMN, rid).single().execute().data
-    except Exception as e:
-        print(f">> aviso: falha ao buscar row para envio (suggest): {e}", flush=True)
-
-    _record_human_suggestion(
-        telefone=(row or {}).get("telefone") if row else None,
-        texto=texto,
-        group_id=(row or {}).get("group_id") if row else None,
-        client_row=row,
-        source="teams",
-        author="Teams",
-        reply_to=rid,
-    )
-
-    _supabase_update_safe(rid, {
-        "final_out": None,
-        "manual_reply": texto,
-        "approved": False,
-        "approved_by": "Teams",
-        "status": "suggested",
-        "origem": "human_suggestion",
-        "used_ai": False,
-        "error": None,
-    })
-
-    print(f">> Sugestão registrada via Teams (id={rid}) sent=False")
-    return "<h3>✅ Sugestão registrada com sucesso!</h3><p>Você pode fechar esta janela.</p>"
+# ========================================
+# ROTA ANTIGA - DESABILITADA (usar blueprint teams_suggest.py)
+# ========================================
+# @app.post("/teams/suggest")
+# def teams_suggest_submit():
+#     # PASSO 1 - Extrair dados do payload JSON
+#     data = request.get_json(silent=True) or {}
+#     telefone = data.get('telefone')
+#     mensagem_sugerida = data.get('mensagem') or data.get('suggestion')
+#     msg_id_original = data.get('msg_id')
+#     contexto = data.get('contexto')
+#     resposta_bot_original = data.get('resposta_bot')
+#     token = data.get('token') or request.args.get('token') or request.headers.get('Authorization')
+#
+#     # === DEBUG TOKEN ===
+#     print(f"\n{'='*60}", flush=True)
+#     print(f"[DEBUG TOKEN] Payload completo: {data}", flush=True)
+#     print(f"[DEBUG TOKEN] Token recebido (raw): {token!r}", flush=True)
+#     print(f"[DEBUG TOKEN] Token recebido (type): {type(token)}", flush=True)
+#     print(f"[DEBUG TOKEN] Token recebido (len): {len(token) if token else 0}", flush=True)
+#     print(f"[DEBUG TOKEN] Token esperado (raw): {TEAMS_ACTION_TOKEN!r}", flush=True)
+#     print(f"[DEBUG TOKEN] Token esperado (type): {type(TEAMS_ACTION_TOKEN)}", flush=True)
+#     print(f"[DEBUG TOKEN] Token esperado (len): {len(TEAMS_ACTION_TOKEN) if TEAMS_ACTION_TOKEN else 0}", flush=True)
+#     print(f"[DEBUG TOKEN] Tokens são iguais? {token == TEAMS_ACTION_TOKEN}", flush=True)
+#     print(f"[DEBUG TOKEN] TEAMS_ACTION_TOKEN from env: {os.getenv('TEAMS_ACTION_TOKEN')!r}", flush=True)
+#     print(f"{'='*60}\n", flush=True)
+#     # === FIM DEBUG ===
+#
+#     print(f">> /teams/suggest (POST) payload={data}", flush=True)
+#     if token != (TEAMS_ACTION_TOKEN or ""):
+#         print(f">> /teams/suggest (POST): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
+#         return jsonify({"ok": False, "error": "Token inválido"}), 403
+#     if not telefone or not mensagem_sugerida:
+#         return jsonify({"ok": False, "error": "Telefone e mensagem são obrigatórios"}), 400
+#
+#     # PASSO 2 - Enviar mensagem sugerida para o WhatsApp via Z-API
+#     envio_ok = False
+#     erro_envio = None
+#     if OUTGOING_ENABLED:
+#         try:
+#             envio_ok = send_text_to(phone=telefone, message=mensagem_sugerida)
+#         except Exception as e:
+#             erro_envio = str(e)
+#             print(f">> Erro ao enviar sugestão para WhatsApp: {e}", flush=True)
+#
+#     # PASSO 3 - Salvar sugestão no Supabase
+#     rid = _cast_key_for_query(msg_id_original) if msg_id_original else None
+#     row = None
+#     if rid and supabase:
+#         try:
+#             row = supabase.table(TABLE).select("*").eq(ID_COLUMN, rid).single().execute().data
+#         except Exception as e:
+#             print(f">> aviso: falha ao buscar row original para sugestão: {e}", flush=True)
+#
+#     # Atualiza/insere registro da sugestão
+#     update_payload = {
+#         "final_out": mensagem_sugerida if envio_ok or not OUTGOING_ENABLED else None,
+#         "manual_reply": mensagem_sugerida,
+#         "approved": True,
+#         "approved_by": "Teams",
+#         "status": "sent" if envio_ok else ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
+#         "origem": "human_suggestion",
+#         "used_ai": False,
+#         "error": erro_envio,
+#         "contexto": contexto,
+#         "resposta_bot": resposta_bot_original,
+#     }
+#     if rid and supabase:
+#         _supabase_update_safe(rid, update_payload)
+#     else:
+#         # Se não houver msg_id, salva como novo registro
+#         payload = {
+#             "telefone": telefone,
+#             "mensagem": {"text": mensagem_sugerida, "meta": {"contexto": contexto, "resposta_bot": resposta_bot_original}},
+#             "data": _now_iso(),
+#             "manual_reply": mensagem_sugerida,
+#             "approved": True,
+#             "approved_by": "Teams",
+#             "status": "sent" if envio_ok else ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
+#             "origem": "human_suggestion",
+#             "used_ai": False,
+#             "error": erro_envio,
+#         }
+#         if supabase:
+#             try:
+#                 supabase.table(TABLE).insert(payload).execute()
+#             except Exception as e:
+#                 print(f">> aviso: falha ao inserir sugestão sem msg_id: {e}", flush=True)
+#
+#     # PASSO 4 - Registrar sugestão humana para histórico
+#     _record_human_suggestion(
+#         telefone=telefone,
+#         texto=mensagem_sugerida,
+#         group_id=(row or {}).get("group_id") if row else None,
+#         client_row=row,
+#         source="teams",
+#         author="Teams",
+#         reply_to=rid,
+#     )
+#
+#     print(f">> Sugestão registrada via Teams (telefone={telefone}, id={rid}) sent={envio_ok}")
+#     return jsonify({"ok": True, "sent": envio_ok, "telefone": telefone, "msg_id": rid})
 
 @app.get("/favicon.ico")
 def favicon(): return "", 204
@@ -3570,9 +3685,9 @@ def favicon(): return "", 204
 @app.get("/")
 def home(): return render_template("index.html")
 
-@app.get("/ping")
+@app.route("/ping")
 def ping():
-    return "pong"
+    return "ok", 200
 
 # =====================================================================
 # /admin

@@ -432,6 +432,8 @@ def _atualizar_ai_draft_e_status(row_id: Union[int, str], draft: str, status: st
 
     # Notifica Teams se status='awaiting_approval' e ai_draft preenchido
     if status == "awaiting_approval" and draft and isinstance(draft, str) and draft.strip():
+        telefone = None
+        mensagem = None
         try:
             # Busca row atualizada para garantir campos
             row = _sb_fetch_mensagem_row(row_id)

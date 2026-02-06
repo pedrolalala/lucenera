@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugerir Resposta - Lucenera</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #667eea;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-content {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .editable-section {
+            background: #fff;
+            border: 2px solid #667eea;
+        }
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info-badge {
+            display: inline-block;
+            background: #e7f3ff;
+            color: #0366d6;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 Sugerir Resposta</h1>
+        <p class="subtitle">Revise a conversa e corrija/melhore a resposta sugerida pelo bot</p>
+        
+        <div id="alert" class="alert"></div>
+        
+        <!-- Mensagem do Cliente -->
+        <div class="section">
+            <div class="section-title">📩 MENSAGEM DO CLIENTE</div>
+            <div class="section-content">{{ mensagem_cliente }}</div>
+            {% if categoria %}
+            <span class="info-badge">{{ categoria }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- Resposta do Bot -->
+        <div class="section">
+            <div class="section-title">🤖 RESPOSTA DO BOT</div>
+            <div class="section-content">{{ resposta_bot }}</div>
+        </div>
+        
+        <!-- Formulário para Resposta Humana -->
+        <form id="suggestForm">
+            <div class="section editable-section">
+                <div class="section-title">✍️ RESPOSTA CORRIGIDA (HUMANO)</div>
+                <textarea 
+                    id="mensagem" 
+                    name="mensagem" 
+                    placeholder="Digite aqui a resposta correta ou melhorada..."
+                    required
+                >{{ resposta_bot }}</textarea>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 8px;">
+                    💡 Dica: Você pode editar a resposta do bot acima ou escrever uma nova do zero
+                </small>
+            </div>
+            
+            <div class="btn-container">
+                <button type="button" class="btn-secondary" onclick="window.close()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    ✅ Enviar Sugestão
+                </button>
+            </div>
+        </form>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Enviando para Supabase...</p>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('suggestForm');
+        const alert = document.getElementById('alert');
+        const loading = document.querySelector('.loading');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Dados passados pelo backend
+        const msgId = "{{ msg_id }}";
+        const token = "{{ token }}";
+        const mensagemCliente = {{ mensagem_cliente|tojson }};
+        const respostaBot = {{ resposta_bot|tojson }};
+        const telefone = "{{ telefone }}";
+        const categoria = "{{ categoria }}";
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const mensagemHumana = document.getElementById('mensagem').value.trim();
+
+            if (!mensagemHumana) {
+                showAlert('❌ Por favor, digite uma resposta!', 'error');
+                return;
+            }
+
+            // Validar se mudou algo
+            if (mensagemHumana === respostaBot) {
+                const confirmar = confirm('A resposta não foi alterada. Deseja enviar mesmo assim?');
+                if (!confirmar) return;
+            }
+
+            // Mostrar loading
+            form.style.display = 'none';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const payload = {
+                    mensagem: mensagemHumana,
+                    msg_id: msgId,
+                    token: token,
+                    telefone: telefone,
+                    contexto: {
+                        mensagem_cliente: mensagemCliente,
+                        categoria: categoria,
+                        intencao: 'correcao_humana'
+                    },
+                    resposta_bot: respostaBot
+                };
+                    // Removed stray line with just '{'
+                // === DEBUG TOKEN ===
+                console.log('=== DEBUG TOKEN ===');
+                console.log('Token original:', token);
+                console.log('Token length:', token.length);
+                console.log('Token repr:', JSON.stringify(token));
+                console.log('Payload completo:', JSON.stringify(payload));
+                // === FIM DEBUG TOKEN ===
+
+                const response = await fetch('/teams/suggest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                console.log('Resultado:', result);
+
+                if (result.success) {
+                    showAlert('✅ Sugestão enviada e salva no Supabase com sucesso!', 'success');
+
+                    // Feedback adicional
+                    if (result.registrada_supabase) {
+                        console.log('✅ Confirmado: Registrado no Supabase');
+                    }
+                    if (result.enviada_whatsapp) {
+                        console.log('✅ Confirmado: Enviado via WhatsApp');
+                    }
+
+                    setTimeout(() => {
+                        window.close();
+                    }, 2500);
+                } else {
+                    showAlert('❌ Erro: ' + (result.error || 'Falha ao enviar'), 'error');
+                    form.style.display = 'block';
+                    loading.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showAlert('❌ Erro de conexão: ' + error.message, 'error');
+                form.style.display = 'block';
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = 'alert alert-' + type;
+            alert.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

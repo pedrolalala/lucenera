@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 ZAPI_BASE = (os.getenv("ZAPI_BASE") or "https://api.z-api.io").rstrip('/')
-ZAPI_INSTANCE = os.getenv("ZAPI_INSTANCE", "").strip()
+ZAPI_ID_INSTANCE = os.getenv("ZAPI_ID_INSTANCE", "").strip()
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN", "").strip()
 ZAPI_CLIENT = os.getenv("ZAPI_CLIENT_TOKEN", "").strip()
 ZAPI_SENDTEXT_PATH = os.getenv("ZAPI_SENDTEXT_PATH", "/message/sendText")
@@ -62,9 +62,9 @@ PAYLOADS = [
 
 def candidate_urls():
     urls = []
-    if ZAPI_INSTANCE and ZAPI_TOKEN:
+    if ZAPI_ID_INSTANCE and ZAPI_TOKEN:
         for p in PATHS:
-            urls.append(f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}{p}")
+            urls.append(f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}{p}")
     for p in PATHS:
         urls.append(f"{ZAPI_BASE}{p}")
     return list(dict.fromkeys(urls))

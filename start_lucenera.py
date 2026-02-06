@@ -22,7 +22,7 @@ PORT          = int(os.getenv("PORT", "5000"))
 FLASK_DEBUG   = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
 ZAPI_BASE     = (os.getenv("ZAPI_BASE") or "https://api.z-api.io").rstrip("/")
-ZAPI_INSTANCE = os.getenv("ZAPI_INSTANCE", "")
+ZAPI_ID_INSTANCE = os.getenv("ZAPI_ID_INSTANCE", "")
 ZAPI_TOKEN    = os.getenv("ZAPI_TOKEN", "")
 ZAPI_CLIENT   = os.getenv("ZAPI_CLIENT_TOKEN")  # opcional (algumas contas exigem)
 WEBHOOK_PATH  = os.getenv("WEBHOOK_PATH", "/webhook/whatsapp")
@@ -231,12 +231,11 @@ def wait_ngrok_url(timeout=60):
 
 def set_zapi_webhook(public_base_url: str):
     """Configura o webhook 'Ao receber' na Z-API para apontar ao seu endpoint."""
-    if not (ZAPI_INSTANCE and ZAPI_TOKEN):
-        print("[zapi] PULEI: faltando ZAPI_INSTANCE/ZAPI_TOKEN no .env")
+    if not (ZAPI_ID_INSTANCE and ZAPI_TOKEN):
+        print("[zapi] PULEI: faltando ZAPI_ID_INSTANCE/ZAPI_TOKEN no .env")
         return
-
     webhook = f"{public_base_url.rstrip('/')}{WEBHOOK_PATH}"
-    url = f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received"
+    url = f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received"
     headers = {}
     if ZAPI_CLIENT:
         headers["Client-Token"] = ZAPI_CLIENT
@@ -250,7 +249,7 @@ def set_zapi_webhook(public_base_url: str):
 
     # (Opcional) também marcar "Notificar as enviadas por mim"
     # try:
-    #     url2 = f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery"
+    #     url2 = f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery"
     #     requests.put(url2, json=body, headers=headers, timeout=20)
     #     print("[zapi] Webhook DELIVERY atualizado também.")
     # except Exception as e:
@@ -323,7 +322,20 @@ def main():
     else:
         app_proc = start_flask()
         print(f"[start] Flask PID = {getattr(app_proc, 'pid', None)}")
-        time.sleep(2)
+        # Aguarda Flask subir e responder /ping
+        flask_ready = False
+        for _ in range(20):  # até 20 tentativas (~20s)
+            try:
+                r = requests.get(f"http://127.0.0.1:{PORT}/ping", timeout=2)
+                if r.status_code == 200:
+                    flask_ready = True
+                    print("[start] Flask /ping respondeu OK.")
+                    break
+            except Exception:
+                pass
+            time.sleep(1)
+        if not flask_ready:
+            print("[start] Flask não respondeu /ping após 20s. Verifique logs.")
 
     # Start or reuse ngrok unless a public base URL was provided
     ngrok_proc = None

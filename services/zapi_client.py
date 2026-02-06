@@ -11,9 +11,10 @@ import requests
 
 ZAPI_BASE = os.getenv("ZAPI_BASE", "").rstrip("/")
 ZAPI_SENDTEXT_PATH = os.getenv("ZAPI_SENDTEXT_PATH", "/message/sendText")
-ZAPI_TOKEN = os.getenv("ZAPI_TOKEN", "")  # se sua Z-API usar token em header
-ZAPI_INSTANCE = os.getenv("ZAPI_INSTANCE", "")
-ZAPI_CLIENT = os.getenv("ZAPI_CLIENT_TOKEN")  # opcional, algumas contas exigem Client-Token header
+ZAPI_TOKEN = os.getenv("ZAPI_TOKEN", "")  # usado na URL
+ZAPI_ID_INSTANCE = os.getenv("ZAPI_ID_INSTANCE", "")
+ZAPI_ID_INSTANCE = os.getenv('ZAPI_ID_INSTANCE', '')  # New variable for updated instance
+ZAPI_CLIENT_TOKEN = os.getenv("ZAPI_CLIENT_TOKEN", "")  # ← CORRIGIDO: nome da variável e valor padrão
 ZAPI_TIMEOUT = float(os.getenv("ZAPI_TIMEOUT", "15"))
 ZAPI_TRY_ALIASES = os.getenv("ZAPI_TRY_ALIASES", "false").lower() in ("1", "true", "yes")
 
@@ -25,8 +26,8 @@ def _headers() -> Dict[str, str]:
         # ajuste a chave do header conforme seu provedor (Bearer, X-API-KEY, etc.)
         h["Authorization"] = f"Bearer {ZAPI_TOKEN}"
     # Algumas contas Z-API exigem um header 'Client-Token' em vez de Authorization
-    if ZAPI_CLIENT:
-        h["Client-Token"] = ZAPI_CLIENT
+    if ZAPI_CLIENT_TOKEN:
+        h["Client-Token"] = ZAPI_CLIENT_TOKEN
     return h
 
 def send_text_to(*, phone: Optional[str] = None, group: Optional[str] = None, message: str) -> bool:
@@ -48,9 +49,9 @@ def send_text_to(*, phone: Optional[str] = None, group: Optional[str] = None, me
 
     # construct candidate URLs (instance-based first if available)
     urls = []
-    if ZAPI_INSTANCE and ZAPI_TOKEN:
+    if ZAPI_ID_INSTANCE and ZAPI_TOKEN:
         for p in candidate_paths:
-            urls.append(f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}{p}")
+            urls.append(f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}{p}")
     for p in candidate_paths:
         urls.append(f"{ZAPI_BASE}{p}")
 
@@ -131,8 +132,8 @@ def _media_headers() -> Dict[str, str]:
     headers: Dict[str, str] = {}
     if ZAPI_TOKEN:
         headers["Authorization"] = f"Bearer {ZAPI_TOKEN}"
-    if ZAPI_CLIENT:
-        headers["Client-Token"] = ZAPI_CLIENT
+    if ZAPI_CLIENT_TOKEN:
+        headers["Client-Token"] = ZAPI_CLIENT_TOKEN
     return headers
 
 
@@ -145,7 +146,7 @@ def _download_from_url(url: str) -> Tuple[bytes, str]:
 
 
 def _download_media_from_id(media_id: str) -> Tuple[bytes, str]:
-    if not (ZAPI_BASE and ZAPI_INSTANCE and ZAPI_TOKEN):
+    if not (ZAPI_BASE and ZAPI_ID_INSTANCE and ZAPI_TOKEN):
         raise RuntimeError("Z-API não configurada para download via media_id")
 
     candidate_paths = [
@@ -157,7 +158,7 @@ def _download_media_from_id(media_id: str) -> Tuple[bytes, str]:
     ]
     last_error: Optional[Exception] = None
     for path in candidate_paths:
-        url = f"{ZAPI_BASE}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}{path}"
+        url = f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}{path}"
         try:
             logger.info("ZAPI_MEDIA_FETCH media_id=%s url=%s", media_id, url)
             response = requests.get(url, headers=_media_headers(), timeout=ZAPI_TIMEOUT)

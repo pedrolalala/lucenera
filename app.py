@@ -1,89 +1,83 @@
-# -*- coding: utf-8 -*-
-try:
-    from services.chatgpt_responder import (
-        gerar_resposta_com_chatgpt,
-        _normalize_for_match as _norm,
-        _ensure_prefix as _ensure_ai_prefix,
-    )
-    print(">> Erro de normalização resolvido (_norm importado de chatgpt_responder)", flush=True)
-except Exception:
-    from services.chatgpt_responder import gerar_resposta_com_chatgpt  # type: ignore
-
-    def _norm(value):
-        import re as _re
-        import unicodedata as _unicodedata
-
-        text = str(value or "").strip()
-        if not text:
-            return ""
-        normalized = _unicodedata.normalize("NFKD", text)
-        normalized = "".join(ch for ch in normalized if not _unicodedata.combining(ch))
-        normalized = _re.sub(r"\s+", " ", normalized).strip().lower()
-        return normalized
-
-    def _ensure_ai_prefix(text: str) -> str:  # pragma: no cover - fallback simples
-        trimmed = (text or "").strip()
-        if not trimmed:
-            return "*Julia:*"
-        lower = trimmed.lower()
-        for marker in ("*julia:*", "julia.", "julia:"):
-            if lower.startswith(marker):
-                trimmed = trimmed[len(marker):].lstrip(" \n-:")
-                break
-        body = " ".join(trimmed.split())
-        return f"*Julia:* {body}" if body else "*Julia:*"
-
-    print(">> Erro de normalização resolvido (_norm fallback ativo)", flush=True)
-
-from services import zapi_client
-BLOCKED_INTERNAL    = {_digits_only(x) for x in (INTERNAL_WHATS or []) if _digits_only(x)}  # do config_equipes
-
-# Conjunto final para checagem rápida
-BLOCKED_NUMBERS = BLOCKED_DEFAULT_SET | BLOCKED_ENV_SET | BLOCKED_INTERNAL
-
-def is_internal_number(phone: str) -> bool:
-    """Retorna True se o número for da equipe interna."""
-    return _digits_only(phone) in BLOCKED_INTERNAL
-
-def is_blocked_number(phone: str) -> bool:
-    """Retorna True se o número estiver bloqueado (inclui internos)."""
-    return _digits_only(phone) in BLOCKED_NUMBERS
-
-print(f">> Números bloqueados ativos: {sorted(BLOCKED_NUMBERS)}", flush=True)
-
-
-def _row_is_from_me(row: dict) -> bool:
-    """
-    Retorna True se essa linha representa mensagem enviada pela empresa (from_me),
-    seja vinda do payload Z-API ou registrada internamente.
-    Essa função NÃO deve ter efeitos colaterais, apenas leitura.
-    """
-    if not row:
-        return False
-
-    try:
-        if row.get("from_me") is True:
-            return True
-        if row.get("fromMe") is True:
-            return True
-
-        msg = row.get("mensagem") or {}
-        if isinstance(msg, dict):
-            meta = msg.get("meta") or {}
-            if meta.get("from_me") is True or meta.get("fromMe") is True:
-                return True
-
-        direction = (row.get("direction") or "").lower()
-        if direction == "out":
-            return True
-
-        origem = str(row.get("origem") or "").strip().lower()
-        if origem in {"bot", "human", "bot_api", "outgoing", "sent"}:
-            return True
-    except Exception:
-        pass
-
-    return False
+## --- LEGACY /teams/suggest routes commented out to ensure only blueprint is active ---
+# @app.get("/teams/suggest")
+# def teams_suggest():
+#     from flask import render_template_string, request
+#     msg_id = request.args.get("id")
+#     token = request.args.get("token")
+#     # Debug: log incoming args for diagnosis
+#     try:
+#         incoming_args = dict(request.args)
+#     except Exception:
+#         incoming_args = {}
+#     print(f">> /teams/suggest (GET) called args={incoming_args}", flush=True)
+#     if token != (TEAMS_ACTION_TOKEN or ""):
+#         print(f">> /teams/suggest (GET): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
+#         return "Token inválido", 403
+#
+#     # Página simples de sugestão
+#     html = f"""
+#     <html>
+#     <head>
+#         <meta charset='utf-8'>
+#         <title>Sugerir resposta - Lucenera</title>
+#         <style>
+#             body {{
+#                 font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+#                 margin: 40px;
+#                 color: #333;
+#             }}
+#             textarea {{
+#                 width: 100%;
+#                 height: 140px;
+#                 font-size: 15px;
+#                 padding: 8px;
+#                 border-radius: 6px;
+#                 border: 1px solid #ccc;
+#                 resize: vertical;
+#             }}
+#             button {{
+#                 background: #2563eb;
+#                 color: white;
+#                 border: none;
+#                 padding: 8px 16px;
+#                 border-radius: 6px;
+#                 cursor: pointer;
+#                 margin-top: 10px;
+#             }}
+#             button:hover {{ background: #1d4ed8; }}
+#         </style>
+#     </head>
+#     <body>
+#         <h2>💬 Sugerir resposta manual</h2>
+#         <form method="post" action="/teams/suggest">
+#             <input type="hidden" name="id" value="{msg_id}">
+#             <input type="hidden" name="token" value="{token}">
+#             <textarea name="texto" placeholder="Escreva aqui a resposta sugerida..."></textarea><br>
+#             <button type="submit">Enviar sugestão</button>
+#         </form>
+#     </body>
+#     </html>
+#     """
+#     return render_template_string(html)
+#
+#
+# @app.post("/teams/suggest")
+# def teams_suggest_submit():
+#     from flask import request
+#     msg_id = request.form.get("id")
+#     token = request.form.get("token")
+#     texto = request.form.get("texto") or ""
+#     # Debug: log form args and token status for diagnosis
+#     try:
+#         form_args = dict(request.form)
+#     except Exception:
+#         form_args = {}
+#     print(f">> /teams/suggest (POST) called form={form_args}", flush=True)
+#     if token != (TEAMS_ACTION_TOKEN or ""):
+#         print(f">> /teams/suggest (POST): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
+#         return "Token inválido", 403
+## --- Removido bloco com erro de indentação e returns fora de função ---
+## --- Fim da limpeza de código legado ---
 _MEDIA_PLACEHOLDERS = {
     "image": "[Imagem recebida]",
     "photo": "[Imagem recebida]",
@@ -322,7 +316,7 @@ MATHEUS_PHONE  = _clean_env("MATHEUS_PHONE")  or _clean_env("LOGISTICS_PHONE")
 
 # Z-API
 ZAPI_BASE = _clean_env("ZAPI_BASE") or "https://api.z-api.io"
-ZAPI_INSTANCE = _clean_env("ZAPI_INSTANCE") or ""
+ZAPI_ID_INSTANCE = _clean_env("ZAPI_ID_INSTANCE") or ""
 ZAPI_TOKEN = _clean_env("ZAPI_TOKEN") or ""
 ZAPI_CLIENT_TOKEN = _clean_env("ZAPI_CLIENT_TOKEN") or ""
 PUBLIC_BASE_URL = _clean_env("PUBLIC_BASE_URL") or _clean_env("APP_PUBLIC_URL")
@@ -1079,19 +1073,19 @@ def _chat_key_from_payload(p: dict) -> str:
 # Z-API helper (autoconfigurar webhooks)
 # =====================================================================
 def _zapi_update_webhooks(base_url: str, webhook_path: str = WEBHOOK_PATH) -> bool:
-    if not (ZAPI_INSTANCE and ZAPI_TOKEN and ZAPI_CLIENT_TOKEN and base_url and base_url.startswith("https://")):
-        print(">> Z-API: dados insuficientes p/ atualizar webhooks (precisa https + INSTANCE + ZAPI_TOKEN + ZAPI_CLIENT_TOKEN).", flush=True)
+    if not (ZAPI_ID_INSTANCE and ZAPI_TOKEN and ZAPI_CLIENT_TOKEN and base_url and base_url.startswith("https://")):
+        print(">> Z-API: dados insuficientes p/ atualizar webhooks (precisa https + ID_INSTANCE + ZAPI_TOKEN + ZAPI_CLIENT_TOKEN).", flush=True)
         return False
     target = f"{base_url.rstrip('/')}{webhook_path}"
     print(f">> Z-API: definindo webhook para {target}", flush=True)
     headers = {"Content-Type": "application/json", "Client-Token": ZAPI_CLIENT_TOKEN}
     notify = (ZAPI_WEBHOOK_MODE != "receive_only")
     tries: List[Tuple[str, str, Dict[str, Any]]] = [
-        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-every-webhooks","PUT",{"value": target, "notifySentByMe": notify}),
-        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received","PUT",{"webhookUrl": target}),
+        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-every-webhooks","PUT",{"value": target, "notifySentByMe": notify}),
+        (f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received","PUT",{"webhookUrl": target}),
     ]
     if notify:
-        tries.append((f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery","PUT",{"webhookUrl": target}))
+        tries.append((f"{ZAPI_BASE.rstrip('/')}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received-delivery","PUT",{"webhookUrl": target}))
     ok_any = False; last_status = None; last_text = None
     for url, method, body in tries:
         try:
@@ -1401,7 +1395,11 @@ def _teams_format_text(row: dict) -> str:
     else:
         msg = ((row.get("mensagem") or {}).get("text") or "").strip()
 
-    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n🛎️ **Mensagem:** {msg}"
+    # Adiciona transcrição de áudio, se existir
+    audio_transcript = meta.get("audio_transcript")
+    transcript_block = f"\n🎧 **Transcrição:** {audio_transcript}" if audio_transcript else ""
+
+    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n🛎️ **Mensagem:** {msg}{transcript_block}"
 
 
 def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | None = None) -> None:

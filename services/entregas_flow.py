@@ -21,7 +21,7 @@ else:
     supabase = None
 
 ENTREGADORES = {
-    "5516992089829",  # número de teste
+    "xxxxxxxxx",  # número de teste
 }
 
 JSONDict = Dict[str, Any]
@@ -274,7 +274,7 @@ def handle_entregas_message(row: Dict) -> Tuple[Optional[str], Optional[Dict]]:
 # {
 #   "endereco": "Condomínio Quinta da Alvorada 522",
 #   "codigo_obra": "25380",
-#   "telefone": "5516992089829",
+#   "telefone": "xxxxxxxxxx",
 #   "nome_entregador": "Pedro",
 #   "foto_url": "https://...",
 #   "observacao": "faltaram 5 unidades",

@@ -397,7 +397,7 @@ if not TEAMS_WEBHOOK_ENTREGAS:
     )
 
 ENTREGADORES_WHATS = {
-    _digits_only("5516992089829"),  # entregador / numero de teste
+    _digits_only("xxxxxxxxxx"),  # entregador / numero de teste
 }
 
 

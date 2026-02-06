@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 helpers.py — utilitários genéricos usados pelo app
 - IO de arquivos/JSON (com escrita atômica)
@@ -14,6 +13,28 @@ import base64
 import mimetypes
 from pathlib import Path
 from typing import Any, Optional
+
+# Saudação dinâmica por horário (America/Sao_Paulo)
+def get_greeting_by_time():
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("America/Sao_Paulo")
+        now = datetime.now(tz)
+    except Exception:
+        try:
+            import pytz
+            tz = pytz.timezone("America/Sao_Paulo")
+            now = datetime.now(tz)
+        except Exception:
+            now = datetime.now()
+    hour = now.hour
+    if 5 <= hour < 12:
+        return "Bom dia"
+    elif 12 <= hour < 18:
+        return "Boa tarde"
+    else:
+        return "Boa noite"
+# -*- coding: utf-8 -*-
 
 # -----------------------------
 # Arquivos / JSON

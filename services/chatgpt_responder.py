@@ -159,8 +159,12 @@ def _build_short_reply(message: str, seed: str, reason: Optional[str] = None) ->
     base_variants = _SHORT_RESPONSE_VARIANTS
 
     if reason == "personal_check":
+        from helpers import get_greeting_by_time
+        greeting = get_greeting_by_time()
         variants = [
-            "Bom dia! Estou bem tambem, e por ai?",
+            f"{greeting}, Estou bem tambem, e por ai?",
+            f"{greeting}, tudo otimo e com você?",
+            f"{greeting}, tudo certo por aqui, e contigo?",
             "Oi! Tudo certo por aqui",
             "Tudo otimo, obrigada por perguntar :)",
         ]
@@ -180,21 +184,18 @@ def _build_short_reply(message: str, seed: str, reason: Optional[str] = None) ->
             "Tudo tranquilo, se surgir dúvida te aviso.",
         ]
     elif any(greeting in normalized for greeting in {"bom dia", "boa tarde", "boa noite"}):
-        if "bom dia" in normalized:
-            variants = [
-                "Bom dia! Tudo bem por aqui, sigo acompanhando o projeto.",
-                "Bom dia! Estou por aqui e te atualizo se aparecer novidade.",
-            ]
-        elif "boa tarde" in normalized:
-            variants = [
-                "Boa tarde! Está tudo certo por aqui, obrigada pelo contato.",
-                "Boa tarde! Sigo acompanhando e te aviso se precisar de algo.",
-            ]
-        else:
-            variants = [
-                "Boa noite! Tudo tranquilo por aqui, obrigada por avisar.",
-                "Boa noite! Continuo acompanhando e retorno caso surja algo.",
-            ]
+        from helpers import get_greeting_by_time
+        greeting = get_greeting_by_time()
+        variants = [
+            f"{greeting}! Tudo bem por aqui, sigo acompanhando o projeto.",
+            f"{greeting}! Estou por aqui e te atualizo se aparecer novidade.",
+            f"{greeting}! Está tudo certo por aqui, obrigada pelo contato.",
+            f"{greeting}! Sigo acompanhando e te aviso se precisar de algo.",
+            f"{greeting}! Tudo tranquilo por aqui, obrigada por avisar.",
+            f"{greeting}! Continuo acompanhando e retorno caso surja algo.",
+        ]
+        reply = _select_variant(variants, seed)
+        return _normalize_sentence_output(reply)
     elif any(term in normalized for term in {"oi", "ola"}):
         variants = [
             "Tudo certo por aqui, obrigada por chamar.",
@@ -1240,6 +1241,56 @@ def _gerar_resposta_impl(
     mensagem_id: Optional[str | int],
     telefone: Optional[str],
 ) -> str:
+
+    # --- INÍCIO PATCH: Priorizar interpretação de mídia ---
+    # Se houver interpretação de mídia na meta, usar como base da resposta sugerida
+    meta = None
+    try:
+        # Buscar meta de mensagem do usuário (caso mensagem seja contexto enriquecido)
+        from main import supabase
+        if telefone:
+            # Buscar última mensagem do telefone
+            if supabase:
+                data = supabase.table("mensagens").select("mensagem").eq("telefone", telefone).order("created_at", desc=True).limit(1).execute().data
+                if data and isinstance(data, list):
+                    first = data[0] if len(data) > 0 else None
+                    if isinstance(first, dict):
+                        msg = first.get("mensagem")
+                        if isinstance(msg, dict):
+                            meta = msg.get("meta") if isinstance(msg.get("meta"), dict) else None
+        # fallback: tentar extrair meta de mensagem se mensagem for JSON
+        if not meta:
+            import json
+            try:
+                msg_obj = json.loads(mensagem)
+                if isinstance(msg_obj, dict):
+                    mmeta = msg_obj.get("meta")
+                    if isinstance(mmeta, dict):
+                        meta = mmeta
+            except Exception:
+                pass
+    except Exception:
+        meta = None
+
+    media_interpret = None
+    if isinstance(meta, dict):
+        ai = meta.get("audio_interpretation")
+        ii = meta.get("image_interpretation")
+        if isinstance(ai, str) and ai.strip():
+            media_interpret = ai.strip()
+        elif isinstance(ii, str) and ii.strip():
+            media_interpret = ii.strip()
+
+    if isinstance(media_interpret, str) and media_interpret:
+        resposta_base = media_interpret
+        LOGGER.info(
+            "Resposta sugerida baseada em interpretação de mídia para user_id=%s: %s",
+            uid,
+            resposta_base,
+        )
+        return _ensure_prefix(resposta_base)
+    # --- FIM PATCH: Priorizar interpretação de mídia ---
+
     short_reason = _classify_short_message(mensagem)
     if short_reason:
         short_reply = _build_short_reply(mensagem, f"{uid}:{mensagem}:short", short_reason)

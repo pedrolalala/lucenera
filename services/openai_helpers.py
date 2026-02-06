@@ -374,16 +374,56 @@ def enrich_row_with_media_text(row: dict) -> Dict[str, Any]:
             ext = mimetypes.guess_extension(mimetypes.guess_type(audio_url)[0] or "") or ".ogg"
             tr = _transcribe_bytes(data, filename=f"audio{ext}")
             if tr:
+                # Gera interpretação curta para áudio
+                short_interpret = None
+                try:
+                    from openai.types.chat import ChatCompletionUserMessageParam
+                    prompt = (
+                        "Resuma em 1 frase clara e objetiva o conteúdo do áudio recebido, para que um atendente saiba do que se trata sem ouvir o áudio. Seja específico, não genérico."
+                        f"\nTranscrição: {tr}"
+                    )
+                    msgs: list[ChatCompletionUserMessageParam] = [{"role": "user", "content": prompt}]
+                    out = cliente.chat.completions.create(model=OPENAI_MODEL, messages=msgs, temperature=0.2)
+                    short_interpret = (out.choices or [])[0].message.content
+                    if short_interpret:
+                        short_interpret = short_interpret.strip()
+                except Exception:
+                    short_interpret = None
                 new_text = tr
                 meta_changes.update({"audio_url": audio_url, "audio_transcript": tr})
+                if short_interpret:
+                    meta_changes["audio_interpretation"] = short_interpret
+                # Logging reforçado
+                import logging
+                logger = logging.getLogger("lucenera.audio")
+                telefone = row.get("telefone")
+                msg_id = row.get("id") or (row.get("mensagem") or {}).get("id")
+                logger.info(f"[AUDIO_TRANSCRITO] telefone={telefone} id={msg_id} transcricao={tr} interpretacao={short_interpret}")
 
     # IMAGEM
     if image_url and not new_text:
         try:
             cap = _image_caption(image_url)
+            short_interpret = None
             if cap:
+                # Gera interpretação curta para imagem
+                try:
+                    from openai.types.chat import ChatCompletionUserMessageParam
+                    prompt = (
+                        "Resuma em 1 frase clara e objetiva o conteúdo da imagem recebida, para que um atendente saiba do que se trata sem ver a imagem. Seja específico, não genérico."
+                        f"\nDescrição da imagem: {cap}"
+                    )
+                    msgs: list[ChatCompletionUserMessageParam] = [{"role": "user", "content": prompt}]
+                    out = cliente.chat.completions.create(model=OPENAI_MODEL, messages=msgs, temperature=0.2)
+                    short_interpret = (out.choices or [])[0].message.content
+                    if short_interpret:
+                        short_interpret = short_interpret.strip()
+                except Exception:
+                    short_interpret = None
                 new_text = f"[Imagem] {cap}"
                 meta_changes.update({"image_url": image_url, "image_caption": cap})
+                if short_interpret:
+                    meta_changes["image_interpretation"] = short_interpret
             else:
                 # análise falhou — usar fallback amigável e registrar meta indicando falha
                 new_text = "Ocorreu um erro ao processar a imagem. Peça ao cliente para descrever o que deseja na imagem."
