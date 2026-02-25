@@ -29,8 +29,14 @@ def normalizar_telefone(telefone):
     return telefone
 
 def validar_telefone(telefone):
-    """Valida formato E.164 brasileiro: 5516999999999"""
-    return isinstance(telefone, str) and telefone.startswith('55') and len(telefone) == 13
+    """Valida formato E.164 brasileiro: 5516999999999 (celular ou fixo)"""
+    if not isinstance(telefone, str):
+        return False
+    if not telefone.startswith('55'):
+        return False
+    # Aceitar APENAS celular (55 + DDD + 9 + 8 dígitos = 13) ou fixo (55 + DDD + 8 dígitos = 12)
+    # Não aceitar números com 11 dígitos que são números nacionais incompletos
+    return len(telefone) == 12 or len(telefone) == 13
 
 # === ROTA GET /suggest (formulário) ===
 @teams_suggest_bp.route('/suggest', methods=['GET'])
@@ -50,20 +56,21 @@ def suggest_form():
             if res.data and len(res.data) > 0:
                 row = res.data[0]
                 # mensagem_cliente pode estar em row['mensagem'] (json)
-                if mensagem_cliente is None:
-                    msg = row.get('mensagem')
-                    if isinstance(msg, dict):
-                        mensagem_cliente = msg.get('text') or ''
-                    elif isinstance(msg, str):
-                        mensagem_cliente = msg
-                    else:
-                        mensagem_cliente = ''
-                if resposta_bot is None:
-                    resposta_bot = row.get('ai_draft') or row.get('final_out') or ''
-                if telefone is None:
-                    telefone = row.get('telefone') or ''
-                if categoria is None:
-                    categoria = row.get('categoria') or ''
+                if isinstance(row, dict):
+                    if mensagem_cliente is None:
+                        msg = row.get('mensagem')
+                        if isinstance(msg, dict):
+                            mensagem_cliente = msg.get('text') or ''
+                        elif isinstance(msg, str):
+                            mensagem_cliente = msg
+                        else:
+                            mensagem_cliente = ''
+                    if resposta_bot is None:
+                        resposta_bot = row.get('ai_draft') or row.get('final_out') or ''
+                    if telefone is None:
+                        telefone = row.get('telefone') or ''
+                    if categoria is None:
+                        categoria = row.get('categoria') or ''
         except Exception as e:
             logger.warning(f"[SUGGEST_FORM] Falha ao buscar dados do banco: {e}")
             if mensagem_cliente is None:
@@ -108,18 +115,19 @@ def suggest():
                 if res.data and len(res.data) > 0:
                     row = res.data[0]
                     # mensagem_cliente pode estar em row['mensagem'] (json)
-                    if not contexto.get('mensagem_cliente'):
-                        msg = row.get('mensagem')
-                        if isinstance(msg, dict):
-                            contexto['mensagem_cliente'] = msg.get('text') or ''
-                        elif isinstance(msg, str):
-                            contexto['mensagem_cliente'] = msg
-                        else:
-                            contexto['mensagem_cliente'] = ''
-                    if not resposta_bot:
-                        resposta_bot = row.get('ai_draft') or row.get('final_out') or ''
-                    if not telefone:
-                        telefone = row.get('telefone') or ''
+                    if isinstance(row, dict):
+                        if not contexto.get('mensagem_cliente'):
+                            msg = row.get('mensagem')
+                            if isinstance(msg, dict):
+                                contexto['mensagem_cliente'] = msg.get('text') or ''
+                            elif isinstance(msg, str):
+                                contexto['mensagem_cliente'] = msg
+                            else:
+                                contexto['mensagem_cliente'] = ''
+                        if not resposta_bot:
+                            resposta_bot = row.get('ai_draft') or row.get('final_out') or ''
+                        if not telefone:
+                            telefone = row.get('telefone') or ''
             except Exception as e:
                 logger.warning(f"[SUGGEST] Falha ao buscar dados do banco: {e}")
                 if not contexto.get('mensagem_cliente'):
@@ -185,7 +193,11 @@ def suggest():
                         row = res.data[0]
                         if isinstance(row, dict):
                             if not contexto.get('mensagem_cliente'):
-                                contexto['mensagem_cliente'] = row.get('mensagem', '')
+                                msg = row.get('mensagem', '')
+                                if isinstance(msg, dict):
+                                    contexto['mensagem_cliente'] = msg.get('text', '')
+                                else:
+                                    contexto['mensagem_cliente'] = msg or ''
                             if not contexto.get('categoria'):
                                 contexto['categoria'] = row.get('categoria', '')
                             if not contexto.get('intencao'):
@@ -326,12 +338,11 @@ def approve():
             logger.warning(f"[APPROVE] Nenhum registro encontrado para id_num={rid}")
             return f"erro: registro não encontrado", 404
         row = res.data[0]
+        telefone = None
+        resposta = None
         if isinstance(row, dict):
             telefone = row.get('telefone')
             resposta = row.get('ai_draft') or row.get('final_out')
-        else:
-            telefone = None
-            resposta = None
         if not telefone or not resposta:
             logger.warning(f"[APPROVE] Telefone ou resposta ausente para id_num={rid}")
             return f"erro: telefone ou resposta ausente", 400

@@ -94,6 +94,9 @@ from services.zapi_client import send_text_from_row, send_text_to
 from services.deliveries_flow import handle_event as handle_delivery_event
 import re, unicodedata, time
 from datetime import datetime, timedelta, timezone
+# === CONFIGURAÇÕES DE REFINAMENTO ===
+ENABLE_RESPONSE_REFINEMENT = os.getenv("ENABLE_RESPONSE_REFINEMENT", "true").lower() in {"true", "1", "yes", "on"}
+
 # Diretório base do projeto para localizar recursos auxiliares.
 BASE_DIR = Path(__file__).resolve().parent
 _DOTENV_PATH = find_dotenv(usecwd=True)
@@ -132,7 +135,7 @@ from services.config_equipes import (
 
 
 GREETINGS_RE = re.compile(
-    r"^(oi|ol[aá]|e?ai|boa\s?(tarde|noite|dia)|td ?bem|tudo ?bem|beleza|blz|como vai)[\s\W]*$",
+    r"^(oi|ol[aá]|e?ai|bo(a|m)\s?(tarde|noite|dia)|td ?bem|tudo ?bem|beleza|blz|como vai|(muito\s+)?obrigad[oa]|valeu|ok\s+(obrigad|bom))",
     re.I
 )
 FOLLOWUP_RE = re.compile(
@@ -146,6 +149,25 @@ LOGISTICA_RE = re.compile(
 # === Smalltalk (cortesia/ack/reciprocidade) ===
 ACK_RE = re.compile(r"\b(obrigad[aoa]|valeu|perfeito|ótimo|otimo|combinado|ok(?:ay)?)\b", re.I)
 RECIPROCIDADE_RE = re.compile(r"\b(tudo|td)\s*(bem|bom)\s*(e\s*voc[eê])\b", re.I)
+
+# === Funções de detecção de padrões ===
+def is_greeting(txt: str) -> bool:
+    """Detecta saudações usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(GREETINGS_RE.match(txt.strip()))
+
+def is_ack(txt: str) -> bool:
+    """Detecta agradecimentos/confirmações usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(ACK_RE.search(txt))
+
+def is_reciprocidade(txt: str) -> bool:
+    """Detecta reciprocidade (ex: 'tudo bem e você?') usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(RECIPROCIDADE_RE.search(txt))
 
 def _row_chat_key(row: dict) -> str:
     phone = str(row.get("telefone") or row.get("from") or "").strip()
@@ -705,7 +727,15 @@ DELIVERY_CALLBACKS_TABLE = _clean_env("DELIVERY_CALLBACKS_TABLE") or "whatsapp_d
 _FINALIZER_TERMS = {
     "ok","okk","okkk","okay","td bem","tudo bem","blz","beleza","ta bom","tá bom",
     "ta certo","tá certo","certo","show","valeu","vlw","obrigado","obrigada","obg",
-    "tmj","perfeito","fechou","combinado","confirmado","joia","jóia","maravilha","para vocês também"
+    "tmj","perfeito","fechou","combinado","confirmado","joia","jóia","maravilha","para vocês também",
+    # Adicionando confirmações que antes eram [SEM RESPOSTA NECESSÁRIA]
+    "sim","compreendo","entendo","entendi","correto","certeza","exato","ótimo","otimo",
+    "esta ótimo","esta otimo","está ótimo","está otimo","esta bom","está bom","tudo certo",
+    "ta bom","ta otimo","tá ótimo","esta perfeito","está perfeito","tranquilo",
+    # Expressões de confirmação
+    "pode deixar","pode sim","pode ir","ta liberado","tá liberado","autorizo","autorizado",
+    # Confirmações simples adicionadas
+    "isso","isso mesmo","exatamente"
     }
 _EMOJI_FINALIZERS = {"👍","👍🏻","👍🏼","👍🏽","👍🏾","👍🏿","👌","🤝","🙏","🙂","😊","😉","✅","✔️","✌️","👊","👏","🙌","❤️","❤"}
 
@@ -724,12 +754,96 @@ def is_finalizing_message(texto: str) -> bool:
     tn = _normalize_no_accent(
         t_raw.replace(".", "").replace("!", "").replace(",", "").replace(";", "")
     ).strip()
+    
+    # PRIORIDADE: Verificar se é pergunta (detectar ANTES de qualquer análise de finalização)
+    import re
+    question_patterns = [
+        r"[\?]",  # Contém ponto de interrogação
+        r"\b(como|quando|onde|qual|quais|quanto|que|quem|por que|porque)\b.*\b(isso|ele|ela|funciona|acontece|é|eh)\b"
+    ]
+    for pattern in question_patterns:
+        if re.search(pattern, t_raw.lower(), re.IGNORECASE):
+            return False
+    
+    # PRIORIDADE MÁXIMA: Detectar padrões de redirecionamento/encerramento
+    redirect_patterns = [
+        r"\b(entendi|ok|certo|sim|compreendo|obrigad[oa]?)\s.*\bvou\s+(repassar|falar\s+com|avisar|comunicar|informar)",
+        r"\bentendi\s.*\bvou\s+repassar",  # Padrão específico do Henry
+    ]
+    
+    for pattern in redirect_patterns:
+        if re.search(pattern, t_raw.lower(), re.IGNORECASE):
+            return True
+    
+    # Verificar termos exatos para frases curtas
     if len(tn) <= 20:
         if tn in _FINALIZER_TERMS:
             return True
         ws = tn.split()
         if 1 <= len(ws) <= 3 and any(w in _FINALIZER_TERMS for w in ws):
             return True
+    
+    # Verificar palavras-chave de finalização em frases mais longas
+    ws = tn.split()
+    if any(w in _FINALIZER_TERMS for w in ws):
+        # NOVA LÓGICA: Detectar conteúdo substantivo que invalida a finalização
+        content_indicators = {
+            # Conjunções adversativas
+            "mas", "porem", "contudo", "entretanto", "todavia",
+            # Indicadores de ação/pedido (mais específicos)
+            "preciso", "gostaria", "quero", "pode", "consegue",
+            # Indicadores de dúvida/questão
+            "duvida", "questao", "problema", "ajuda",
+            # Verbos de mudança/verificação (excluir "vou" genérico)
+            "alterar", "mudar", "adicionar", "verificar", "checar",
+            # Indicadores temporais/contextuais
+            "amanha", "hoje", "depois", "antes", "prazo", "socio", "equipe"
+        }
+        
+        # Se há indicadores de conteúdo adicional, NÃO é finalizer
+        if any(ci in ws for ci in content_indicators):
+            return False
+            
+        # Verificar padrões de elaboração usando regex no texto original
+        import re
+        elaboration_patterns = [
+            r"\b(mas|porém|contudo|entretanto)\b",      # "ok, mas..."
+            r"\b(também|ainda|além disso)\b",           # "sim, também..."  
+            r"\b(preciso|gostaria|quero)\s+\w+",        # "ótimo, preciso confirmar..."
+            r"\b(sobre|para|com|em)\s+\w+",             # "compreendo sobre o prazo"
+            r"\b(tenho|tem)\s+(uma|alguma)?\s*(dúvida|questão)", # "mas tenho uma dúvida"
+            # Padrões específicos que indicam AÇÃO (não finalização)
+            r"\b(vou|posso)\s+(fazer|tentar|verificar|checar|alterar|mudar|resolver)", # ações específicas
+        ]
+        
+        for pattern in elaboration_patterns:
+            if re.search(pattern, t_raw.lower(), re.IGNORECASE):
+                return False
+                
+        # EXCEÇÃO: Permitir finalizadores com "vou" quando é redirecionamento/encerramento
+        redirect_patterns = [
+            r"\bvou\s+(repassar|falar\s+com|avisar|comunicar|informar)",  # "vou repassar", "vou falar com"
+            r"\bvou\s+(confirmar|alinhar)$",  # "vou confirmar" no final da frase
+        ]
+        
+        has_redirect = any(re.search(pat, t_raw.lower()) for pat in redirect_patterns)
+        if has_redirect and any(w in _FINALIZER_TERMS for w in ws):
+            return True
+        
+        # Análise de comprimento: se muito longa, provavelmente tem conteúdo
+        if len(ws) > 8:  # Mais de 8 palavras sugere elaboração
+            # Verificar proporção de finalizadores vs conteúdo total
+            finalizer_count = sum(1 for w in ws if w in _FINALIZER_TERMS)
+            if finalizer_count / len(ws) < 0.3:  # Menos de 30% são finalizadores
+                return False
+        
+        # Confirmar que não há palavras que indicam pergunta ou pedido 
+        question_words = {"como", "quando", "onde", "qual", "quanto", "que"}
+        if any(qw in ws for qw in question_words):
+            return False
+            
+        return True
+    
     if _only_emojis(t_raw) and any(e in t_raw for e in _EMOJI_FINALIZERS):
         return True
     return False
@@ -751,49 +865,1256 @@ def _strip_filler_phrases(s: str) -> str:
     return re.sub(r"\s{2,}", " ", out).strip(" .;,-")
 
 
-def _humanize_robotic_response(resposta: str, sender_name: Optional[str], original_msg: str) -> str:
-    """Detecta padrões robóticos e reescreve para um tom humano mantendo o prefixo '**Julia:** '.
+def _safe_extract_sender_name(row: dict) -> Optional[str]:
+    """Extrai o nome do remetente do row de forma segura."""
+    try:
+        # Tenta extrair de diferentes locais onde o nome pode estar
+        sender_name = row.get("sender_name")
+        if isinstance(sender_name, str) and sender_name.strip():
+            return sender_name.strip()
+        
+        # Tenta extrair do campo 'nome'
+        nome = row.get("nome")
+        if isinstance(nome, dict):
+            display = nome.get("display")
+            if isinstance(display, str) and display.strip():
+                return display.strip()
+        elif isinstance(nome, str) and nome.strip():
+            return nome.strip()
+            
+        # Tenta extrair de outros campos possíveis
+        for field in ["contact_name", "from_name", "user_name"]:
+            value = row.get(field)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+                
+        return None
+    except Exception:
+        return None
 
-    - Se a resposta contém frases como 'recebi sua mensagem' ou 'entendi', reescreve.
-    - Para saudações curtas, gera uma saudação calorosa via _gentle_greeting_reply.
-    - Para pedidos que exigem verificação, retorna um dos templates aprovados.
+
+def _is_financial_question(txt: str) -> bool:
+    """Detecta se a mensagem é uma questão financeira/comercial."""
+    if not txt:
+        return False
+    
+    txt_lower = txt.lower()
+    
+    # Palavras-chave financeiras/comerciais
+    financial_keywords = [
+        'valor', 'preço', 'quanto', 'custa', 'orçamento', 'parcel', 
+        'desconto', 'pagamento', 'financeiro', 'entrada', 'vista', 
+        'cartão', 'boleto', 'pix', 'transferência', 'fechamos', 
+        'fechou', 'fechar', 'negócio', 'proposta', 'contrato',
+        'em quantas', 'em 3x', 'em 4x', 'parcelas', 'condições',
+        'reais', 'r$', 'mil', 'euros', 'dólar'
+    ]
+    
+    return any(keyword in txt_lower for keyword in financial_keywords)
+
+
+def _get_time_greeting() -> str:
+    """Retorna saudação apropriada baseada no horário atual."""
+    try:
+        from datetime import datetime
+        hora = datetime.now().hour
+        if 5 <= hora < 12:
+            return "Bom dia!"
+        elif 12 <= hora < 18:
+            return "Boa tarde!"
+        else:
+            return "Boa noite!"
+    except:
+        return "Olá!"
+
+
+def _identify_message_type(original_msg: str) -> str:
+    """Identifica o tipo de mensagem para resposta contextual específica.
+    
+    ORDEM DE PRIORIDADE (do mais específico para o mais genérico):
+    1. SAUDAÇÃO PURA (sem conteúdo técnico)
+    2. FINALIZAÇÃO (agradecimentos, despedidas)
+    3. MENSAGENS ESPECÍFICAS (PIX, orçamento, entrega, etc)
+    4. AGENDAMENTO (reunião, visita, retirada)
+    5. PERGUNTAS (contém "?", "quando", "quanto", etc)
+    6. INFORMAÇÕES (cliente informando algo)
+    7. CONFIRMAÇÕES (sim, ok, perfeito, etc)
+    8. AMBÍGUA (ÚLTIMA OPÇÃO - usar menos!)
+    
+    Retorna:
+    - 'saudacao': Saudações puras sem conteúdo técnico
+    - 'finalizacao': Agradecimentos, despedidas, finalizadores
+    - 'mensagem_especifica': PIX, orçamento, catálogo, entrega, retirada, exclusividade
+    - 'agendamento': Agendar material, reunião ou entrega
+    - 'pergunta': Cliente está perguntando
+    - 'informacao': Cliente está informando algo
+    - 'confirmacao': Cliente confirma/nega algo  
+    - 'problema': Cliente aponta dificuldade/objeção
+    - 'ambigua': Mensagem complexa/ambígua (ÚLTIMA OPÇÃO)
+    """
+    if not original_msg:
+        return 'ambigua'
+        
+    msg_lower = original_msg.lower().strip()
+    
+    # === PRIORIDADE 1: SAUDAÇÃO PURA (sem conteúdo técnico) ===
+    saudacao_patterns = ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "e ai", "eai", "ola", "hello"]
+    technical_words = ["projeto", "luminária", "estoque", "retirar", "item", "ponto", "iluminação",
+                      "prazo", "entrega", "valor", "preço", "disponível", "pendente", "frame", "gesso",
+                      "beiral", "traçado", "confirmar", "acrescentar", "watts", "temperatura", "obra"]
+    
+    # Verificar se é saudação pura (sem conteúdo técnico)
+    has_greeting = any(pattern in msg_lower for pattern in saudacao_patterns)
+    has_technical = any(word in msg_lower for word in technical_words)
+    is_short = len(original_msg.strip()) < 30
+    
+    if has_greeting and not has_technical and is_short:
+        return 'saudacao'
+    
+    # === PRIORIDADE 2: FINALIZAÇÃO (agradecimentos, despedidas) ===
+    finalizacao_patterns = ["obrigado", "obrigada", "valeu", "agradeço", "magina", "imagina", "de nada",
+                           "bye", "tchau", "até", "falou", "a disposição", "à disposição", "disponível",
+                           "até mais", "até logo", "te agradeço", "muito obrigado", "muito obrigada"]
+    
+    # Verificar finalizações puras
+    has_finalizacao = any(pattern in msg_lower for pattern in finalizacao_patterns)
+    if has_finalizacao and not has_technical and len(original_msg.strip()) < 50:
+        return 'finalizacao'
+
+    # === PRIORIDADE 2.5: APRESENTAÇÕES ===
+    # Detectar apresentações simples logo após saudações/finalizações
+    presentation_patterns = ["sou ", "eu sou ", "meu nome é", "me chamo", "trabalho na", "coord de"]
+    if any(pattern in msg_lower for pattern in presentation_patterns):
+        return 'informacao'
+    
+    # === PRIORIDADE 3: MENSAGENS ESPECÍFICAS ===
+    # PIX/PAGAMENTO (mais específico)
+    pix_keywords = ["pix", "chave pix", "dados bancários", "dados bancario", "conta para transferencia"]
+    if any(keyword in msg_lower for keyword in pix_keywords):
+        return 'mensagem_especifica'
+    
+    # ORÇAMENTO/VALOR
+    orcamento_keywords = ["orçamento", "orcamento", "proposta", "cotação", "cotacao", 
+                          "quanto custa", "valor", "preço", "preco", "como você faz esse valor"]
+    if any(keyword in msg_lower for keyword in orcamento_keywords):
+        return 'mensagem_especifica'
+    
+    # ENTREGA/PRAZO
+    entrega_keywords = ["vocês entregam", "fazem entrega", "frete", "prazo de entrega",
+                        "quando consegue entregar", "entrega está pendente", "custo da entrega",
+                        "consegue me entregar", "disponível para retirada"]
+    if any(keyword in msg_lower for keyword in entrega_keywords):
+        return 'mensagem_especifica'
+    
+    # RETIRADA (sem conflito com agendamento)
+    retirada_keywords = ["retirar", "pegar", "buscar", "consigo retirar", "retirada",
+                         "chegou a retirar", "retirar no estoque"]
+    # Verificar se não é agendamento
+    if (any(keyword in msg_lower for keyword in retirada_keywords) and 
+        not any(phrase in msg_lower for phrase in ["agendar", "marcar", "horário", "horario"])):
+        return 'mensagem_especifica'
+    
+    # CATÁLOGO
+    catalogo_keywords = ["catálogo", "catalogo", "produtos", "modelos", "opções", "opcoes",
+                         "linha", "tipos", "variedades"]
+    if any(keyword in msg_lower for keyword in catalogo_keywords):
+        return 'mensagem_especifica'
+    
+    # EXCLUSIVIDADE/COMERCIAL
+    comercial_keywords = ["exclusividade", "revenda", "distribuição", "distribuicao",
+                          "parceria", "representante", "comercial", "revendedor"]
+    if any(keyword in msg_lower for keyword in comercial_keywords):
+        return 'mensagem_especifica'
+    
+    # === PRIORIDADE 4: AGENDAMENTO ===
+    # AGENDAMENTO DE REUNIÃO (verificar PRIMEIRO)
+    agendamento_reuniao_keywords = ["reunião", "reuniao", "visita", "conversar pessoalmente",
+                                    "marcar reunião", "marcar reuniao", "ir aí", "ir ai",
+                                    "encontro", "bate-papo", "contato com", "entrar em contato"]
+    if any(keyword in msg_lower for keyword in agendamento_reuniao_keywords):
+        return 'agendamento'
+    
+    # AGENDAMENTO DE ENTREGA
+    if any(phrase in msg_lower for phrase in ["agendar entrega", "agendar a entrega", "marcar entrega", 
+                                               "marcar a entrega", "horário de entrega", "horario de entrega",
+                                               "dia de entrega", "quando podem entregar", "melhor dia para entrega"]):
+        return 'agendamento'
+    
+    # AGENDAMENTO DE MATERIAL
+    if any(phrase in msg_lower for phrase in ["agendar retirada", "agendar a retirada", "reservar",
+                                               "horário para retirar", "horario para retirar", 
+                                               "marcar horário", "marcar horario", "reservar um horário",
+                                               "quando posso buscar", "agendar para buscar", "agendar buscar"]):
+        return 'agendamento'
+    
+    # === PRIORIDADE 5: PERGUNTAS ===
+    question_indicators = ["quando", "quanto", "como", "onde", "qual", "que", "porque", "por que",
+                          "tem", "há", "existe", "pode", "consegue", "é possível", "é possivel",
+                          "você", "vocês"]
+    has_question_mark = "?" in original_msg
+    has_question_structure = any(word in msg_lower for word in question_indicators)
+    
+    if has_question_mark or has_question_structure:
+        return 'pergunta'
+    
+    # === PRIORIDADE 6: INFORMAÇÕES (cliente informando algo) ===
+    info_indicators = ["eu tenho", "eu não tenho", "nós temos", "nossa empresa", "aqui a gente",
+                      "vou fazer", "vou mandar", "já fiz", "acabei de", "enviei", "mandei",
+                      "nossa situação", "no nosso caso", "aqui funciona", "a gente trabalha",
+                      "informo que", "para sua informação", "quero informar",
+                      # Informações sobre obra/andamento
+                      "estou na obra", "estou em", "vou verificar", "concluída", "finalizado",
+                      "concretagem concluída", "instalaram", "começar a instalação"]
+    
+    if any(ind in msg_lower for ind in info_indicators):
+        return 'informacao'
+    
+    # === PRIORIDADE 7: CONFIRMAÇÕES ===
+    # Primeiro verificar padrões específicos de correção/altura
+    correction_patterns = [
+        r"não quer na altura.+quis \d+",
+        r"não é \d+.+é \d+", 
+        r"ao invés de.+prefiro",
+        r"melhor.+(cm|metros?|altura)",
+        r"quis \d+\s*cm"
+    ]
+    
+    import re
+    if any(re.search(pattern, msg_lower) for pattern in correction_patterns):
+        return 'confirmacao'
+    
+    # Confirmações explícitas
+    explicit_confirm_indicators = [
+        "sim", "exato", "isso mesmo", "correto", "perfeito", "ok", "certo",
+        "confirmo", "pode ser", "está bom", "ta bom", "tá bom", "pode deixar",
+        "altura", "80cm", "90cm", "1m"
+    ]
+    
+    has_explicit_confirm = any(ind in msg_lower for ind in explicit_confirm_indicators)
+    has_correction_context = ("não quer" in msg_lower and any(word in msg_lower for word in ["altura", "cm", "metro"]))
+    has_preference_context = any(phrase in msg_lower for phrase in ["na verdade", "ao invés", "em vez de", "melhor seria", "prefiro"])
+    
+    if has_explicit_confirm or has_correction_context or has_preference_context:
+        return 'confirmacao'
+    
+    # === PRIORIDADE 8: PROBLEMAS ===
+    problema_indicators = ["não consigo", "não consegue", "não tem", "não dá", "não da",
+                          "difícil", "dificil", "problema", "complicado", "impossível", "impossivel",
+                          "não funciona", "não serve", "não pode", "não vai", "não conseguimos",
+                          "preocupado", "urgente", "atrasado", "esperando", "reclamando"]
+    if any(ind in msg_lower for ind in problema_indicators):
+        return 'problema'
+    
+    # === ÚLTIMA OPÇÃO: AMBÍGUA (usar o mínimo possível) ===
+    return 'ambigua'
+    
+    # PRIORIDADE 1: AGENDAMENTO - verificar ANTES para evitar conflito com retirada/entrega
+    # AGENDAMENTO DE ENTREGA (verificar PRIMEIRO - mais específico)
+    if any(phrase in msg_lower for phrase in ["agendar entrega", "agendar a entrega", "marcar entrega", 
+                                               "marcar a entrega", "horário de entrega", "horario de entrega",
+                                               "dia de entrega", "quando podem entregar", "melhor dia para entrega"]):
+        return 'agendamento'
+    
+    # AGENDAMENTO DE MATERIAL
+    if any(phrase in msg_lower for phrase in ["agendar retirada", "agendar a retirada", "reservar",
+                                               "horário para retirar", "horario para retirar", 
+                                               "marcar horário", "marcar horario", "reservar um horário",
+                                               "quando posso buscar", "agendar para buscar", "agendar buscar"]):
+        return 'agendamento'
+    
+    # AGENDAMENTO DE REUNIÃO
+    agendamento_reuniao_keywords = ["reunião", "reuniao", "visita", "conversar pessoalmente",
+                                    "marcar reunião", "marcar reuniao", "ir aí", "ir ai",
+                                    "encontro", "bate-papo"]
+    if any(keyword in msg_lower for keyword in agendamento_reuniao_keywords):
+        return 'agendamento'
+    
+    # PRIORIDADE 2: MENSAGENS ESPECÍFICAS - verificar DEPOIS do agendamento
+    # PIX/PAGAMENTO
+    pix_keywords = ["pix", "chave pix", "pagamento", "dados bancários", "dados bancario", 
+                    "transferência", "transferencia", "conta", "banco", "deposito", "depósito"]
+    if any(keyword in msg_lower for keyword in pix_keywords):
+        return 'mensagem_especifica'
+    
+    # ORÇAMENTO
+    orcamento_keywords = ["orçamento", "orcamento", "proposta", "cotação", "cotacao", 
+                          "quanto custa", "valor", "preço", "preco"]
+    if any(keyword in msg_lower for keyword in orcamento_keywords):
+        return 'mensagem_especifica'
+    
+    # CATÁLOGO
+    catalogo_keywords = ["catálogo", "catalogo", "produtos", "modelos", "opções", "opcoes",
+                         "linha", "tipos", "variedades"]
+    if any(keyword in msg_lower for keyword in catalogo_keywords):
+        return 'mensagem_especifica'
+    
+    # ENTREGA (sem conflito com agendamento)
+    entrega_keywords = ["vocês entregam", "fazem entrega", "frete", "prazo de entrega",
+                        "como é a entrega", "custo da entrega"]
+    # Verificar entrega simples (não agendamento)
+    if (any(keyword in msg_lower for keyword in entrega_keywords) or 
+        ("entrega" in msg_lower and not any(phrase in msg_lower for phrase in ["agendar", "marcar", "horário", "horario", "dia de"]))):
+        return 'mensagem_especifica'
+    
+    # RETIRADA (sem conflito com agendamento)
+    retirada_keywords = ["retirar no estoque", "pegar no estoque", "buscar no estoque",
+                         "vou pegar pessoalmente", "posso ir buscar", "pegar pessoalmente"]
+    # Verificar retirada simples (não agendamento)
+    if (any(keyword in msg_lower for keyword in retirada_keywords) or 
+        ((("retirar" in msg_lower or "buscar" in msg_lower or "pegar" in msg_lower) and 
+         not any(phrase in msg_lower for phrase in ["agendar", "reservar", "marcar", "horário", "horario"])))):
+        return 'mensagem_especifica'
+    
+    # EXCLUSIVIDADE/COMERCIAL
+    comercial_keywords = ["exclusividade", "revenda", "distribuição", "distribuicao",
+                          "parceria", "representante", "comercial", "revendedor"]
+    if any(keyword in msg_lower for keyword in comercial_keywords):
+        return 'mensagem_especifica'
+    
+    # CONFIRMAÇÃO - Cliente confirma/nega/corrige (verificar ANTES de informação para capturar correções)
+    # Primeiro verificar padrões específicos de correção/altura
+    correction_patterns = [
+        r"não quer na altura.+quis \d+",
+        r"não é \d+.+é \d+", 
+        r"ao invés de.+prefiro",
+        r"melhor.+(cm|metros?|altura)",
+        r"quis \d+\s*cm"  # Capturar "quis 80cm"
+    ]
+    
+    import re
+    if any(re.search(pattern, msg_lower) for pattern in correction_patterns):
+        return 'confirmacao'
+    
+    # Confirmações explícitas (sem palavras ambíguas como "não" sozinha)
+    explicit_confirm_indicators = [
+        "sim", "exato", "isso mesmo", "correto", "perfeito", "ok", "certo",
+        "confirmo", "pode ser", "está bom", "ta bom", "tá bom",
+        "altura", "80cm", "90cm", "1m"  # Especificações de medida
+    ]
+    
+    # Apenas detectar como confirmação se for confirmação explícita 
+    # OU se for negação com contexto de correção
+    has_explicit_confirm = any(ind in msg_lower for ind in explicit_confirm_indicators)
+    has_correction_context = ("não quer" in msg_lower and any(word in msg_lower for word in ["altura", "cm", "metro"]))
+    has_preference_context = any(phrase in msg_lower for phrase in ["na verdade", "ao invés", "em vez de", "melhor seria", "prefiro"])
+    
+    if has_explicit_confirm or has_correction_context or has_preference_context:
+        return 'confirmacao'
+    
+    # INFORMAÇÃO - Cliente está informando algo (verificar DEPOIS da confirmação)
+    # APRESENTAÇÕES - Detectar primeiro
+    presentation_patterns = [
+        "sou ", "eu sou ", "meu nome é", "me chamo", "minha empresa é", "trabalho na",
+        "coord de", "coordenador", "coordenadora", "arquiteto", "arquiteta"
+    ]
+    if any(pattern in msg_lower for pattern in presentation_patterns):
+        return 'informacao'
+    
+    info_indicators = [
+        "eu tenho", "eu não tenho", "nós temos", "nossa empresa", "aqui a gente",
+        "vou fazer", "vou mandar", "já fiz", "acabei de", "enviei", "mandei",
+        "nossa situação", "no nosso caso", "aqui funciona", "a gente trabalha",
+        "informo que", "para sua informação", "quero informar"
+    ]
+    # Padrões de informação sobre quantidades/especificações
+    quantity_info_patterns = [
+        r"\d+\s*(unidades?|peças?|metros?|cm|mm)",
+        r"essa quantidade", r"temos \d+", r"são \d+", r"preciso de \d+"
+    ]
+    
+    if any(ind in msg_lower for ind in info_indicators):
+        return 'informacao'
+    
+    import re
+    if any(re.search(pattern, msg_lower) for pattern in quantity_info_patterns):
+        return 'informacao'
+    
+    # PROBLEMA/OBJEÇÃO - Cliente aponta dificuldades (DEPOIS da verificação de informação)
+    problema_indicators = [
+        "não consigo", "não consegue", "não tem", "não dá", "não da",
+        "difícil", "dificil", "problema", "complicado", "impossível", "impossivel",
+        "não funciona", "não serve", "não pode", "não vai", "não conseguimos",
+        "preocupado", "urgente", "atrasado", "esperando", "reclamando"
+    ]
+    if any(ind in msg_lower for ind in problema_indicators):
+        return 'problema'
+    
+    # PERGUNTA - Cliente está perguntando
+    question_indicators = [
+        "quando", "quanto", "como", "onde", "qual", "que", "por que",
+        "tem", "há", "existe", "consegue", "é possível", "é possivel",
+        "você", "vocês"
+    ]
+    # Presença de ? ou estrutura interrogativa
+    has_question_mark = "?" in original_msg
+    has_question_structure = any(word in msg_lower for word in question_indicators)
+    
+    # EXCEÇÃO: "pode ser" não é pergunta, é confirmação - verificar antes
+    if "pode ser" in msg_lower:
+        return 'confirmacao'
+    
+    if has_question_mark or has_question_structure:
+        return 'pergunta'
+    
+    # AMBÍGUA - Casos complexos ou não claros
+    return 'ambigua'
+
+
+def _get_response_options_by_type(original_msg: str, msg_type: str) -> list:
+    """Retorna múltiplas opções de resposta pré-prontas baseadas no tipo de mensagem.
+    O ChatGPT escolherá/adaptará a melhor opção."""
+    msg_lower = original_msg.lower()
+    options = []
+    
+    if msg_type == 'informacao':
+        options = [
+            "Entendi! Vou verificar isso com a equipe e te retorno.",
+            "Recebi a informação. Vou alinhar com o time e te aviso.",
+            "Perfeito! Vou confirmar esses detalhes e te retorno.",
+            "Obrigada pela informação! Vou considerar isso e te retorno."
+        ]
+    
+    elif msg_type == 'confirmacao':
+        options = [
+            "Perfeito! Vou prosseguir conforme combinado.",
+            "Entendido! Vou ajustar conforme sua preferência.",
+            "Ótimo! Vou verificar isso e te retorno com a confirmação.",
+            "Certo! Vou considerar isso no projeto."
+        ]
+    
+    elif msg_type == 'problema':
+        options = [
+            "Entendo a urgência. Vou priorizar isso e te retorno hoje.",
+            "Entendo a dificuldade. Vou buscar alternativas com a equipe.",
+            "Entendo sua preocupação. Vou resolver isso e te retorno.",
+            "Vou verificar isso com prioridade e te retorno logo."
+        ]
+    
+    elif msg_type == 'saudacao':
+        options = [
+            "Olá! Em que posso ajudar você?",
+            "Oi! Como posso auxiliar?",
+            "Olá! Tudo ótimo! Em que posso ajudar?",
+            "Oi! Tudo certo por aqui. E você?"
+        ]
+    
+    elif msg_type == 'finalizacao':
+        options = [
+            "De nada! Estamos à disposição!",
+            "Por nada! Sempre que precisar!",
+            "Obrigada! Estamos sempre à disposição!",
+            "Até logo! Qualquer coisa, estaremos aqui!"
+        ]
+    
+    elif msg_type == 'mensagem_especifica':
+        # PIX/Pagamento
+        if any(k in msg_lower for k in ["pix", "pagamento", "dados bancários", "transferência"]):
+            options = [
+                "Vou providenciar os dados para pagamento e te passo!",
+                "Vou te enviar os dados bancários agora!",
+                "Vou passar as informações de pagamento!"
+            ]
+        # Orçamento
+        elif any(k in msg_lower for k in ["orçamento", "proposta", "cotação", "valor", "preço"]):
+            options = [
+                "Vou preparar um orçamento e te envio!",
+                "Vou calcular os valores e te retorno!",
+                "Vou montar a proposta e te passo!"
+            ]
+        # Catálogo
+        elif any(k in msg_lower for k in ["catálogo", "produtos", "modelos", "opções"]):
+            options = [
+                "Vou te enviar nosso catálogo!",
+                "Vou passar os modelos disponíveis!",
+                "Vou te mostrar as opções!"
+            ]
+        # Entrega
+        elif any(k in msg_lower for k in ["entrega", "entregar", "frete"]):
+            options = [
+                "Vou verificar as opções de entrega!",
+                "Vou checar prazo e frete!",
+                "Vou confirmar a disponibilidade de entrega!"
+            ]
+        else:
+            options = [
+                "Vou verificar essa informação e te retorno!",
+                "Vou checar isso com a equipe!",
+                "Vou confirmar e te aviso!"
+            ]
+    
+    elif msg_type == 'agendamento':
+        options = [
+            "Vou verificar a disponibilidade de horários!",
+            "Vou consultar a agenda e te retorno!",
+            "Vou checar os horários disponíveis!",
+            "Vou alinhar com a equipe sobre disponibilidade!"
+        ]
+    
+    elif msg_type == 'pergunta':
+        options = [
+            "Vou verificar essa informação e te retorno!",
+            "Vou checar isso com a equipe!",
+            "Vou confirmar essa informação!",
+            "Vou buscar esses detalhes e te aviso!"
+        ]
+    
+    else:  # ambigua ou outros
+        options = [
+            "Vou verificar e te retorno em breve!",
+            "Vou checar isso e te aviso!",
+            "Entendi. Vou confirmar com a equipe!"
+        ]
+    
+    return options
+
+
+def _generate_contextual_response_by_type(original_msg: str, msg_type: str) -> str:
+    """Gera resposta específica baseada no tipo de mensagem identificado."""
+    # Removendo saudação automática - será adicionada apenas quando necessário
+    msg_lower = original_msg.lower()
+    
+    if msg_type == 'informacao':
+        # Cliente está informando algo - Reconhecer + próximo passo
+        
+        # APRESENTAÇÕES SIMPLES - Resposta concisa
+        if any(pattern in msg_lower for pattern in ["sou ", "eu sou ", "meu nome é", "me chamo"]):
+            # Extrair nome da apresentação
+            import re
+            name_patterns = [
+                r'sou ([A-Za-zÀ-ÿ]+)',
+                r'eu sou ([A-Za-zÀ-ÿ]+)', 
+                r'meu nome é ([A-Za-zÀ-ÿ]+)',
+                r'me chamo ([A-Za-zÀ-ÿ]+)'
+            ]
+            
+            extracted_name = None
+            for pattern in name_patterns:
+                match = re.search(pattern, msg_lower)
+                if match:
+                    extracted_name = match.group(1).title()
+                    break
+            
+            if extracted_name:
+                return f"Prazer, {extracted_name}!"
+            else:
+                return "Prazer em conhecer você!"
+        
+        elif "não tenho" in msg_lower or "não consegue" in msg_lower:
+            if "quantidade" in msg_lower or "tudo" in msg_lower or any(word in msg_lower for word in ["peças", "metros", "unidades"]):
+                return "Entendi que não consegue produzir tudo. Vou consultar a equipe sobre alternativas e te retorno!"
+            else:
+                return "Entendi a situação. Vou verificar alternativas com a equipe e te retorno!"
+        elif "enviei" in msg_lower or "mandei" in msg_lower:
+            return "Recebi a informação! Vou analisar e te retorno com o feedback!"
+        elif any(word in msg_lower for word in ["estou na obra", "obra", "concretagem", "instalação", "eletricista"]):
+            return "Recebi! Vou registrar essa informação sobre o andamento da obra!"
+        elif any(word in msg_lower for word in ["temos", "nossa empresa", "aqui"]):
+            return "Entendi como funciona aí. Vou alinhar com nossa equipe e te retorno!"
+        else:
+            return "Obrigada pela informação! Vou considerar isso no projeto e te retorno!"
+    
+    elif msg_type == 'confirmacao':
+        # Cliente confirma/corrige - Confirmar entendimento + ação
+        if any(word in msg_lower for word in ["80cm", "90cm", "altura", "centímetros"]):
+            altura_match = None
+            import re
+            altura_search = re.search(r'(\d+)\s*cm', msg_lower)
+            if altura_search:
+                altura_match = altura_search.group(1)
+            
+            if altura_match:
+                return f"Perfeito! Vou considerar {altura_match}cm de altura então. Preparo a proposta e te envio!"
+            else:
+                return "Perfeito! Vou considerar essa altura então. Preparo a proposta e te envio!"
+        elif "sim" in msg_lower or "correto" in msg_lower or "isso mesmo" in msg_lower:
+            return "Perfeito! Vou prosseguir conforme combinado e te retorno!"
+        elif "não" in msg_lower or "nao" in msg_lower:
+            return "Entendido! Vou ajustar conforme sua preferência e te retorno!"
+        elif "prefiro" in msg_lower or "melhor" in msg_lower:
+            return "Perfeito! Vou considerar sua preferência no projeto e te envio!"
+        elif "pode ser" in msg_lower:
+            # PROTEÇÃO: "pode ser" NÃO deve confirmar automaticamente
+            if any(word in msg_lower for word in ["dia", "hora", "data", "quando", "segunda", "terça", "quarta", "quinta", "sexta"]):
+                # Se menciona tempo/agendamento, verificar disponibilidade
+                return "Vou verificar a disponibilidade e te retorno com a confirmação!"
+            else:
+                # "Pode ser" genérico - não confirmar
+                return "Perfeito! Vou verificar isso e te retorno!"
+        elif any(phrase in msg_lower for phrase in ["ok", "sem problemas", "tranquilo", "tudo bem", "perfeito"]):
+            # Para confirmações positivas simples, resposta amigável de agradecimento
+            return "Que bom! Qualquer novidade eu te informo!"
+        else:
+            return "Entendi! Vou confirmar essa informação e te retorno!"
+    
+    elif msg_type == 'problema':
+        # Cliente aponta dificuldade - Empatia + solução
+        if "urgente" in msg_lower or "esperando" in msg_lower:
+            return "Entendo a urgência. Vou priorizar isso e te retorno hoje mesmo!"
+        elif "não consegue" in msg_lower or "não dá" in msg_lower:
+            return f"{greeting} Entendo a dificuldade. Deixa eu ver alternativas com a equipe e te retorno!"
+        elif "problema" in msg_lower or "complicado" in msg_lower:
+            return "Entendo a situação. Vou buscar uma solução com a equipe e te retorno!"
+        else:
+            return "Entendo sua preocupação. Vou resolver isso com a equipe e te retorno hoje!"
+    
+    elif msg_type == 'saudacao':
+        # Saudações puras - resposta amigável (mantém saudação pois é apropriado)
+        greeting = _get_time_greeting()  # Só para saudações é apropriado
+        return _generate_greeting_response(original_msg, greeting)
+    
+    elif msg_type == 'finalizacao':
+        # Finalizações - resposta educada de encerramento
+        return _generate_finalization_response(original_msg, "")
+    
+    elif msg_type == 'mensagem_especifica':
+        # Mensagens específicas do dia a dia - respostas prontas apropriadas
+        return _generate_specific_message_response(original_msg, "")
+    
+    elif msg_type == 'agendamento':
+        # Agendamentos - consultar horários com equipe
+        return _generate_scheduling_response(original_msg, "")
+    
+    elif msg_type == 'pergunta':
+        # Para perguntas, usar a função contextual existente
+        return _generate_contextual_response(original_msg)
+    
+    else:  # 'ambigua'
+        # Mensagem complexa - usar resposta genérica mais cuidadosa (ÚLTIMA OPÇÃO)
+        return f"{greeting} Vou analisar sua mensagem com cuidado e te retorno com uma resposta completa!"
+
+
+def _generate_greeting_response(original_msg: str, greeting: str) -> str:
+    """Gera resposta específica para saudações puras."""
+    msg_lower = original_msg.lower()
+    
+    # Resposta amigável e acolhedora
+    if "tudo bem" in msg_lower:
+        return f"{greeting} Tudo ótimo! Em que posso ajudar você?"
+    else:
+        return f"{greeting} Em que posso auxiliar você?"
+
+
+def _generate_finalization_response(original_msg: str, greeting: str) -> str:
+    """Gera resposta específica para finalizações."""
+    msg_lower = original_msg.lower()
+    
+    # Agradecimentos - resposta mais natural
+    if any(word in msg_lower for word in ["obrigado", "obrigada", "agradeço"]):
+        # Para agradecimentos sobre orçamentos/explicações
+        if any(word in msg_lower for word in ["orçamento", "explicação", "informação", "retorno"]):
+            return "Agradeço pelo retorno! Fico à disposição se tiver alguma dúvida!"
+        else:
+            return "De nada! Estamos à disposição!"
+    
+    # Despedidas
+    elif any(word in msg_lower for word in ["bye", "tchau", "até"]):
+        return f"Até logo! Qualquer coisa, estaremos aqui!"
+    
+    # De nada/imagina
+    elif any(word in msg_lower for word in ["magina", "imagina", "de nada"]):
+        return f"Por nada! Sempre que precisar!"
+    
+    # À disposição
+    elif "disposição" in msg_lower:
+        return f"Muito obrigada! Nós também estamos à disposição!"
+    
+    # Fallback para finalização
+    return f"Obrigada! Estamos sempre à disposição!"
+
+
+def _generate_specific_message_response(original_msg: str, greeting: str) -> str:
+    """Gera resposta específica para contextos do dia a dia."""
+    msg_lower = original_msg.lower()
+    
+    # PIX/PAGAMENTO
+    pix_keywords = ["pix", "chave pix", "pagamento", "dados bancários", "dados bancario", 
+                    "transferência", "transferencia", "conta", "banco", "deposito", "depósito"]
+    if any(keyword in msg_lower for keyword in pix_keywords):
+        return "Vou providenciar os dados para pagamento e te passo!"
+    
+    # ORÇAMENTO
+    orcamento_keywords = ["orçamento", "orcamento", "proposta", "cotação", "cotacao", 
+                          "quanto custa", "valor", "preço", "preco"]
+    if any(keyword in msg_lower for keyword in orcamento_keywords):
+        return "Vou preparar um orçamento atualizado e te envio!"
+    
+    # CATÁLOGO
+    catalogo_keywords = ["catálogo", "catalogo", "produtos", "modelos", "opções", "opcoes",
+                         "linha", "tipos", "variedades"]
+    if any(keyword in msg_lower for keyword in catalogo_keywords):
+        return "Vou te enviar nosso catálogo atualizado!"
+    
+    # ENTREGA
+    entrega_keywords = ["entrega", "entregar", "enviar", "frete", "prazo de entrega",
+                        "vocês entregam", "fazem entrega"]
+    if any(keyword in msg_lower for keyword in entrega_keywords):
+        return "Vou verificar as opções e prazo de entrega para você!"
+    
+    # RETIRADA
+    retirada_keywords = ["retirar", "buscar", "pegar no estoque", "retirada",
+                         "posso buscar", "ir buscar"]
+    if any(keyword in msg_lower for keyword in retirada_keywords):
+        return "Vou verificar a disponibilidade para retirada no estoque!"
+    
+    # EXCLUSIVIDADE/COMERCIAL
+    comercial_keywords = ["exclusividade", "revenda", "distribuição", "distribuicao",
+                          "parceria", "representante", "comercial", "revendedor"]
+    if any(keyword in msg_lower for keyword in comercial_keywords):
+        return "Vou consultar nossa política comercial e te retorno!"
+    
+    # Fallback para mensagem específica
+    return "Vou verificar essa informação específica e te retorno!"
+
+
+def _generate_scheduling_response(original_msg: str, greeting: str) -> str:
+    """Gera resposta específica para solicitações de agendamento."""
+    msg_lower = original_msg.lower()
+    
+    # AGENDAMENTO DE REUNIÃO (verificar PRIMEIRO para ser mais específico)
+    agendamento_reuniao_keywords = ["reunião", "reuniao", "visita", "conversar pessoalmente",
+                                    "marcar reunião", "marcar reuniao", "ir aí", "ir ai",
+                                    "encontro", "bate-papo", "contato com", "entrar em contato"]
+    if any(keyword in msg_lower for keyword in agendamento_reuniao_keywords):
+        # Casos específicos de contato com terceiros
+        if "contato com" in msg_lower or "entrar em contato" in msg_lower:
+            return "Vou entrar em contato para alinhar e organizar tudo!"
+        # Resposta específica para projetos
+        elif any(word in msg_lower for word in ["projeto", "projetos", "obra", "obras"]):
+            return "Vou conversar com a equipe sobre disponibilidade de agenda para discutir o projeto e te retorno!"
+        else:
+            return "Vou conversar com a equipe sobre disponibilidade de agenda para reunião e te retorno!"
+    
+    # AGENDAMENTO DE ENTREGA
+    agendamento_entrega_keywords = ["agendar entrega", "quando podem entregar", 
+                                    "dia de entrega", "horário de entrega", "horario de entrega",
+                                    "marcar entrega"]
+    if any(keyword in msg_lower for keyword in agendamento_entrega_keywords):
+        return "Vou conversar com a equipe sobre os horários de entrega disponíveis e te retorno!"
+    
+    # AGENDAMENTO DE MATERIAL
+    agendamento_material_keywords = ["agendar", "reservar", "quando posso buscar", 
+                                     "horário para retirar", "horario para retirar",
+                                     "marcar horário", "marcar horario"]
+    if any(keyword in msg_lower for keyword in agendamento_material_keywords):
+        return "Vou conversar com a equipe sobre horários disponíveis para retirada e te retorno!"
+    
+    # Fallback para agendamento
+    return "Vou conversar com a equipe sobre disponibilidade de horários e te retorno!"
+
+
+def _generate_contextual_response(original_msg: str) -> str:
+    """
+    Gera resposta contextual baseada na pergunta específica do cliente.
+    Responde DIRETAMENTE o que foi perguntado primeiro, depois agrega valor.
+    """
+    if not original_msg:
+        return "Vou verificar e te retorno em breve"
+    
+    msg_lower = original_msg.lower()
+    
+    # Obter saudação apropriada para o horário
+    try:
+        from datetime import datetime
+        hora = datetime.now().hour
+        if 5 <= hora < 12:
+            saudacao = "Bom dia!"
+        elif 12 <= hora < 18:
+            saudacao = "Boa tarde!"
+        else:
+            saudacao = "Boa noite!"
+    except:
+        saudacao = "Olá!"
+    
+    # === ANÁLISE DE PERGUNTA ESPECÍFICA ===
+    
+    # QUANDO - Perguntas sobre tempo/data
+    quando_patterns = ["quando", "que dia", "que hora", "que horas", "data", "foi enviado", "foi enviada"]
+    if any(pattern in msg_lower for pattern in quando_patterns):
+        if "enviado" in msg_lower or "enviada" in msg_lower:
+            return f"{saudacao} Vou verificar a data de envio e já te retorno. Se precisar de atualização, me avise! 📅"
+        if "entrega" in msg_lower or "chegará" in msg_lower or "chega" in msg_lower:
+            return f"{saudacao} Vou consultar a previsão de entrega e te passo o cronograma!"
+        return f"{saudacao} Vou verificar as datas e te retorno com o cronograma! 📅"
+    
+    # QUANTO - Perguntas sobre valor/preço
+    quanto_patterns = ["quanto", "valor", "preço", "preco", "custa", "orçamento"]
+    if any(pattern in msg_lower for pattern in quanto_patterns):
+        return f"{saudacao} Vou consultar os valores atualizados e te passo o orçamento! 💰"
+    
+    # COMO - Perguntas sobre processo/funcionamento
+    como_patterns = ["como", "de que forma", "qual forma", "funciona", "instala"]
+    if any(pattern in msg_lower for pattern in como_patterns):
+        if "instala" in msg_lower or "instalação" in msg_lower:
+            return f"{saudacao} Vou te explicar o processo de instalação passo a passo! 🔧"
+        return f"{saudacao} Vou te explicar como funciona e te dar todos os detalhes!"
+    
+    # ONDE - Perguntas sobre localização/posicionamento
+    onde_patterns = ["onde", "qual local", "posição", "lugar"]
+    if any(pattern in msg_lower for pattern in onde_patterns):
+        return f"{saudacao} Vou verificar a localização e te passo as coordenadas! 📍"
+    
+    # QUAL/QUE - Perguntas sobre especificação
+    qual_patterns = ["qual", "que tipo", "que modelo", "especificação", "medida"]
+    if any(pattern in msg_lower for pattern in qual_patterns):
+        if "modelo" in msg_lower or "tipo" in msg_lower:
+            return f"{saudacao} Vou verificar os modelos disponíveis e te mando as opções! 🔍"
+        return f"{saudacao} Vou consultar as especificações técnicas e te retorno! 📋"
+    
+    # TEM/HÁ - Perguntas sobre disponibilidade
+    tem_patterns = ["tem", "há", "existe", "disponível", "disponivel", "estoque"]
+    if any(pattern in msg_lower for pattern in tem_patterns):
+        return f"{saudacao} Vou verificar a disponibilidade no estoque e te confirmo! 📦"
+    
+    # CONFIRMAÇÃO/STATUS
+    status_patterns = ["confirmada", "confirmar", "status", "situação", "andamento"]
+    if any(pattern in msg_lower for pattern in status_patterns):
+        if "entrega" in msg_lower:
+            return f"{saudacao} Vou verificar o status da entrega e te atualizo!"
+        return f"{saudacao} Vou consultar o andamento e te passo o status atualizado!"
+    
+    # Fallback mais natural
+    return f"{saudacao} Vou verificar essa informação e te retorno em breve!"
+
+
+def _humanize_robotic_response(resposta: str, sender_name: Optional[str], original_msg: str) -> str:
+    """Detecta padrões robóticos e reescreve para um tom humano com contexto específico.
+
+    NOVA LÓGICA (2026-02-13):
+    1. IDENTIFICAR o tipo de mensagem (informação, confirmação, pergunta, problema)
+    2. RESPONDER especificamente ao contexto identificado
+    3. SÓ usar resposta genérica se mensagem for muito ambígua
+    
+    Implementa fórmula: [Reconhecer o que cliente disse] + [Ação específica] + [Prazo/disponibilidade]
     """
     if not resposta:
         return resposta
     r = (resposta or "").strip()
     low = r.lower()
-    # padrões que consideramos "robóticos"
-    robot_patterns = ["recebi sua mensagem", "mensagem recebida", "entendi", "recebido", "estou verificando", "vou verificar"]
-    if not any(p in low for p in robot_patterns):
-        return resposta
-
-    # Se a mensagem original for uma saudação, devolver saudação humanizada
-    try:
-        if is_greeting(original_msg):
-            name = (sender_name or "").strip()
-            gen = _gentle_greeting_reply(original_msg, name if name else None)
-            if gen:
-                if gen:
-                    return _ensure_ai_prefix(gen)
-    except Exception:
-        pass
-
+    
     low_orig = (original_msg or "").lower()
-    if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
-        return _ensure_ai_prefix("Já te retorno com as observações em breve")
+    
+    # === DETECTAR RESPOSTAS ROBÓTICAS ===
+    robot_patterns = [
+        "recebi sua mensagem", "mensagem recebida", "entendi", "recebido", "estou verificando", 
+        "vou verificar", "compreendo", "entendo", "certo", "ok", "perfeito", "ótimo", "otimo",
+        "entendi sua mensagem", "compreendi", "vou analisar", "vou processar"
+    ]
+    
+    # === DETECTAR RESPOSTAS DE SAUDAÇÃO INADEQUADAS ===
+    greeting_responses = [
+        "tudo bem", "tudo ótimo", "tudo otimo", "boa tarde", "bom dia", "como posso ajudar",
+        "olá! tudo certo", "tudo certo por aqui", "tudo tranquilo", "obrigada por perguntar"
+    ]
+    problematic_responses = [
+        "que bom", "perfeito", "ótimo", "otimo", "compreendo", "ok, vou dar uma olhada",
+        "ok vou dar uma olhada", "excelente", "maravilha"
+    ]
+    technical_keywords = [
+        "projeto", "planta", "pd", "profundidade", "forro", "acabado", "final", "desenho", "perfis",
+        "luminária", "ponto", "iluminação", "beiral", "gesso", "traçado", "layout", 
+        "estoque", "retirar", "conseguir", "disponível", "separar", "romaneio", "itens", "material",
+        "watts", "temperatura", "voltagem", "medida", "dimensão", "modelo", "especificação",
+        "preço", "valor", "quanto", "orçamento", "prazo", "entrega", "quando", "instalar",
+        "como", "onde", "qual", "consegue", "pode", "tem", "técnico", "entregar", "vou mandar", "aguardar",
+        "arquivo", "email", "imagem", "foto", "vídeo", "áudio", "mandei", "enviei", "anexo", "documento",
+        "peças", "peça", "quantas", "precisa", "precisamos", "quantidade"
+    ]
+    
+    is_greeting_response = any(pattern in low for pattern in greeting_responses)
+    is_problematic_response = any(pattern in low for pattern in problematic_responses)
+    has_technical_content = any(keyword in low_orig for keyword in technical_keywords)
+    
+    # Verificar se é uma resposta robótica ou inadequada
+    is_robotic = any(p in low for p in robot_patterns)
+    is_inadequate_greeting = (is_greeting_response or is_problematic_response) and has_technical_content
+    
+    # Se não é robótica nem inadequada, manter resposta original
+    if not is_robotic and not is_inadequate_greeting:
+        # Verificar se é saudação pura sem conteúdo técnico
+        try:
+            if is_greeting(original_msg) and len(original_msg.strip()) <= 30 and not has_technical_content:
+                return _ensure_ai_prefix(_gentle_greeting_reply(original_msg, sender_name))
+        except Exception:
+            pass
+        return resposta
+    
+    # === NOVO SISTEMA: IDENTIFICAR TIPO DE MENSAGEM ===
+    msg_type = _identify_message_type(original_msg)
+    
+    print(f">> [CONTEXTO] Tipo identificado: '{msg_type}' para: '{original_msg[:50]}...'" if len(original_msg) > 50 else f">> [CONTEXTO] Tipo identificado: '{msg_type}' para: '{original_msg}'", flush=True)
+    
+    # Gerar opções de resposta baseadas no tipo
+    response_options = _get_response_options_by_type(original_msg, msg_type)
+    
+    # Gerar resposta específica baseada no tipo (fallback)
+    contextual_response = _generate_contextual_response_by_type(original_msg, msg_type)
+    
+    # === REFINAMENTO COM IA (se habilitado) ===
+    if ENABLE_RESPONSE_REFINEMENT:
+        # PROTEÇÃO: Evitar refinamento IA desnecessário para mensagens muito simples
+        simple_confirmations = ["ok", "ok!", "sem problemas", "tudo bem", "perfeito", "obrigado", "obrigada"]
+        is_simple_message = (len(original_msg.strip()) <= 20 and 
+                           any(phrase in msg_lower for phrase in simple_confirmations))
+        
+        # Para saudações e confirmações simples, pular refinamento IA
+        if msg_type in ['saudacao', 'finalizacao'] or is_simple_message:
+            print(f">> [REFINADOR] Pulando refinamento para mensagem simples: '{msg_type}' - '{original_msg[:30]}'", flush=True)
+        else:
+            try:
+                # Buscar contexto da conversa (agora com 12 mensagens)
+                # Obter telefone do contexto disponível
+                phone = None
+                if 'resposta' in locals() and isinstance(resposta, dict):
+                    phone = resposta.get("phone_number")
+                elif 'original_msg' in locals() and len(original_msg) > 10:
+                    # Tentar extrair de outras fontes disponíveis no contexto
+                    phone = None  # Será definido pela função de contexto
+                
+                conversation_context = _get_conversation_context(phone) if phone else ""
+                
+                # Refinar resposta usando IA com múltiplas opções
+                refined_response = refine_response_with_ai(
+                    user_message=original_msg,
+                    base_response=contextual_response,
+                    conversation_history=conversation_context,
+                    response_options=response_options
+                )
+                
+                contextual_response = refined_response
+                print(f">> [REFINADOR] Resposta refinada aplicada para tipo '{msg_type}'", flush=True)
+                
+            except Exception as e:
+                logger.warning(f"[REFINADOR] Falha no refinamento, usando resposta base: {e}")
+    
+    return _ensure_ai_prefix(contextual_response)
 
-    needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
-    for k in needs_check:
-        if k in low_orig:
-            return _ensure_ai_prefix(
-                "Vou verificar com a equipe e retorno com a atualização sobre os itens"
-            )
 
-    # Fallback: saudação curta e humana
-    first = (sender_name or "").split()[0] if sender_name else ""
-    if first:
-        return _ensure_ai_prefix(f"Oi {first}! Tudo ótimo, e você?")
-    return _ensure_ai_prefix("Oi! Tudo ótimo, e você?")
+def refine_response_with_ai(
+    user_message: str,
+    base_response: str,
+    conversation_history: str = "",
+    response_options: list = None
+) -> str:
+    """Refina a resposta usando IA com múltiplas opções pré-prontas.
+    
+    Args:
+        user_message: Mensagem atual do cliente
+        base_response: Resposta template/base escolhida pelo sistema (fallback)
+        conversation_history: Histórico recente de mensagens (formatado)
+        response_options: Lista de opções de resposta pré-prontas (novo)
+        
+    Returns:
+        Resposta refinada ou base_response em caso de erro/falha
+    """
+    try:
+        if not user_message:
+            logger.warning(f"[REFINADOR] Input inválido: user_message={bool(user_message)}")
+            return base_response
+            
+        # Usar opções pré-prontas ou fallback
+        options_text = ""
+        if response_options and len(response_options) > 0:
+            options_text = "\n".join([f"{i+1}. {opt}" for i, opt in enumerate(response_options)])
+        else:
+            # Se não há opções, usar base_response como única opção
+            options_text = f"1. {base_response}"
+            
+        # Limitar tamanho do contexto para não exceder limites da API
+        history_text = conversation_history[:2000] if conversation_history else "(Sem histórico disponível)"
+        
+        # Sistema de instruções FIXAS para a IA (conforme prompt fornecido)
+        system_prompt = """
+CONTEXTO
+Você é Júlia, da Lucenera (Atelier da Luz). A Lucenera faz: projeto luminotécnico, especificação/fornecimento de luminárias, orientação em obra, orçamento, entrega/retirada e agendamento de reunião técnica.
+A Lucenera NÃO faz: serviço de eletricista/vistoria de quadro, assuntos pessoais/terceiros.
+
+OBJETIVO
+Escolher a MELHOR resposta das opções fornecidas OU adaptá-la para ficar:
+- mais clara e direta
+- mais humana e natural
+- mais específica ao pedido do cliente
+- CURTA e BREVE (máximo 2 frases)
+
+REGRAS INQUEBRÁVEIS
+1) ESCOLHER A MELHOR OPÇÃO: das opções fornecidas, escolha a mais adequada ao contexto
+2) ADAPTAR SE NECESSÁRIO: pode fazer pequenos ajustes para personalizar (mencionar produto específico que cliente falou)
+3) MÁXIMO 2 FRASES: seja DIRETO e OBJETIVO. Sem explicações longas
+4) MANTER AÇÃO: não mude o compromisso (ex: "vou verificar" → pode ser "vou checar", mas não "já verifiquei")
+5) SEM INVENÇÃO: não criar prazos, datas, valores, disponibilidade
+6) USE TERMOS DO CLIENTE: repita palavras-chave que o cliente usou (nome de produto, medida, local)
+7) TOM PROFISSIONAL: direto, sem formalismo excessivo, sem emojis
+8) SE CLIENTE PEDIR SERVIÇO FORA DO ESCOPO: ignore opções e esclareça brevemente:
+   "A gente atua com iluminação. Para eletricista, o ideal é um profissional especializado."
+6) EVITAR ROBÔ: não repetir sempre "vou verificar". Pode alternar por "vou confirmar / vou checar / vou alinhar", mantendo o sentido.
+7) TOM: direto, profissional, atendimento rápido. Sem emoji (ou no máximo 1, e só se ficar natural).
+8) NUNCA oferecer serviços fora do escopo (eletricista, etc). Se o cliente pedir isso, responda curto esclarecendo e redirecionando:
+   "A gente atua com iluminação. Para vistoria elétrica, o ideal é um eletricista. Se quiser, me diga o que precisa de iluminação que eu te ajudo."
+
+10. TOM E FORMATO: Profissional mas acolhedor. Use saudação por horário APENAS quando apropriado. Linguagem clara e direta. SEM emojis.
+
+11. PARA APRESENTAÇÕES SIMPLES: Se cliente só se apresenta ("sou [nome]"), responda apenas "Oi [nome]!" ou similar.
+"""
+        
+        # Prompt do usuário com o formato exato especificado
+        user_prompt = f"""
+HISTÓRICO DAS ÚLTIMAS MENSAGENS:
+{history_text}
+
+MENSAGEM ATUAL DO CLIENTE:
+{user_message}
+
+OPÇÕES DE RESPOSTA PRÉ-PRONTAS:
+{options_text}
+
+TAREFA
+Escolha a melhor opção OU adapte uma delas para o contexto. Resposta deve ser CURTA (máximo 2 frases), DIRETA e COESA.
+"""
+        
+        # Fazer chamada para OpenAI com timeout configurável
+        if not cliente:
+            logger.warning(f"[REFINADOR] Cliente OpenAI não disponível, usando resposta base")
+            return base_response
+            
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        response = cliente.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.5,  # Aumentar para mais criatividade
+            max_tokens=300,
+            timeout=5  # Reduced timeout to prevent blocking
+        )
+        
+        refined_response = response.choices[0].message.content
+        if not refined_response:
+            logger.warning(f"[REFINADOR] IA retornou resposta vazia")
+            return base_response
+        
+        # Debug: Verificar se a IA realmente fez mudanças
+        if refined_response.strip().lower() == base_response.strip().lower():
+            logger.warning(f"[REFINADOR] IA retornou resposta idêntica - pode não ter entendido as instruções")
+            # Continuar mesmo assim para permitir análise
+            
+        # Validações da resposta refinada (conforme especificações)
+        if not _validate_refined_response(refined_response, base_response, user_message):
+            logger.warning(f"[REFINADOR] Resposta refinada falhou na validação")
+            return base_response
+            
+        # Log de sucesso (sem dados sensíveis)
+        APP_LOG.info(f"[REFINADOR_SUCCESS] Original: {len(base_response)}chars, Refinada: {len(refined_response)}chars")
+        logger.info(f"[REFINADOR] Sucesso: resposta refinada gerada")
+        return refined_response.strip()
+        
+    except Exception as e:
+        # Log detalhado de erro (sem dados sensíveis)
+        APP_LOG.warning(f"[REFINADOR_ERROR] Erro: {str(e)[:100]}")
+        logger.warning(f"[REFINADOR] Erro na IA: {e}")
+        return base_response
+
+
+def _validate_refined_response(refined: str, base: str, user_msg: str) -> bool:
+    """Valida se a resposta refinada respeita as regras de negócio conforme especificação."""
+    if not refined or len(refined.strip()) < 10:  # Muito curta
+        return False
+        
+    # Limite de tamanho (não muito longa - máximo 500 caracteres)
+    if len(refined) > 500:
+        return False
+        
+    refined_lower = refined.lower()
+    base_lower = base.lower()
+    user_msg_lower = user_msg.lower()
+    
+    # Verificar se mantém ação principal ("núcleo" da ação)
+    action_keywords = ["vou verificar", "vou consultar", "vou checar", "vou confirmar", 
+                      "vou alinhar", "vou buscar", "vou analisar", "vou preparar",
+                      "vou entrar em contato", "vou conversar", "vou dar uma olhada",
+                      "vou confirmar", "vou atualizar", "vou processar"]
+    
+    base_has_action = any(keyword in base_lower for keyword in action_keywords)
+    refined_has_action = any(keyword in refined_lower for keyword in action_keywords)
+    
+    # Se base tem ação, refinada deve manter (regra principal)
+    if base_has_action and not refined_has_action:
+        # EXCEÇÃO: Se é mal-entendido sobre serviços não oferecidos, permitir que a IA ignore o template
+        servicos_nao_oferecidos = ["eletricista", "eletric", "vistoria", "instalação elétrica", "manutenção elétrica", "quadro de luz"]
+        pessoas_nao_relacionadas = ["dr.", "doutor", "médico", "altino"]
+        
+        cliente_pede_servico_incorreto = any(servico in user_msg_lower for servico in servicos_nao_oferecidos)
+        cliente_pergunta_pessoa_externa = any(pessoa in user_msg_lower for pessoa in pessoas_nao_relacionadas)
+        
+        if not (cliente_pede_servico_incorreto or cliente_pergunta_pessoa_externa):
+            return False  # Só rejeitar se NÃO for mal-entendido que a IA deve corrigir
+    
+    # ===== NOVAS VALIDAÇÕES COMERCIAIS =====
+    
+    # 1. Validação de especificidade comercial - se cliente quer orçamento, resposta deve mencionar
+    orcamento_keywords = ["orçar", "orçamento", "preço", "valor", "quanto custa", "cotação"]
+    cliente_quer_orcamento = any(keyword in user_msg_lower for keyword in orcamento_keywords)
+    resposta_menciona_orcamento = any(keyword in refined_lower for keyword in ["orçamento", "valores", "preço", "cotação"])
+    
+    if cliente_quer_orcamento and not resposta_menciona_orcamento:
+        # Se cliente quer orçamento mas resposta não menciona, deve pelo menos ter ação específica
+        if not any(keyword in refined_lower for keyword in ["vou preparar", "vou calcular", "vou verificar valores"]):
+            logger.warning(f"[REFINADOR] Validação falhou: cliente quer orçamento mas resposta vaga")
+            # Ser menos rigoroso - aceitar se pelo menos mencionou produto específico
+            produto_mencionado = any(palavra in user_msg_lower for palavra in ["pendente", "luminária", "floatation", "projeto"])
+            if not produto_mencionado or not any(palavra in refined_lower for palavra in ["pendente", "luminária", "floatation", "projeto"]):
+                return False
+    
+    # 2. Validação de mal-entendidos - serviços não oferecidos
+    servicos_nao_oferecidos = ["eletricista", "eletric", "vistoria", "instalação elétrica", "manutenção elétrica", "quadro de luz"]
+    cliente_pede_servico_incorreto = any(servico in user_msg_lower for servico in servicos_nao_oferecidos)
+    resposta_sugere_servico_incorreto = any(servico in refined_lower for servico in ["vou verificar eletricista", "temos eletricista", "nosso eletricista"])
+    
+    if cliente_pede_servico_incorreto and resposta_sugere_servico_incorreto:
+        logger.warning(f"[REFINADOR] Validação falhou: resposta sugere serviço não oferecido")
+        return False
+    
+    # Se cliente pede serviço incorreto, a IA DEVE corrigir - se não corrigiu, aceitar mesmo assim para evitar loop
+    if cliente_pede_servico_incorreto and refined_lower == base_lower.strip():
+        logger.warning(f"[REFINADOR] IA não corrigiu mal-entendido, mas aceitando para evitar loop")
+        # return True  # Aceitar para que a IA possa aprender
+    
+    # 3. Validação de pessoas não relacionadas - Dr. Altino, etc
+    pessoas_nao_relacionadas = ["dr.", "doutor", "médico", "altino"]
+    cliente_pergunta_pessoa_externa = any(pessoa in user_msg_lower for pessoa in pessoas_nao_relacionadas)
+    resposta_sugere_conhecimento = any(frase in refined_lower for frase in ["vou verificar como", "vou perguntar sobre", "ele está"])
+    
+    if cliente_pergunta_pessoa_externa and resposta_sugere_conhecimento:
+        logger.warning(f"[REFINADOR] Validação falhou: resposta sugere conhecimento sobre pessoa não relacionada")
+        return False
+    
+    # ===== NOVAS VALIDAÇÕES PARA CORREÇÕES ESPECÍFICAS =====
+    
+    # 4. Validação para agradecimentos - evitar respostas inadequadas sobre "financeiro"
+    agradecimentos_keywords = ["obrigado", "obrigada", "agradeço", "agradecimento"]
+    cliente_agradece = any(keyword in user_msg_lower for keyword in agradecimentos_keywords)
+    respostas_inadequadas_financeiro = [
+        "alinhar com o financeiro", "consultar o financeiro", "verificar com o financeiro",
+        "falar com o financeiro", "acionar o financeiro", "te aviso na sequência"
+    ]
+    resposta_inadequada_financeiro = any(frase in refined_lower for frase in respostas_inadequadas_financeiro)
+    
+    if cliente_agradece and resposta_inadequada_financeiro:
+        logger.warning(f"[REFINADOR] Validação falhou: resposta inadequada para agradecimento (mencionou financeiro)")
+        return False
+    
+    # 5. Validação contra saudações desnecessárias em respostas não-saudação
+    saudacoes = ["bom dia", "boa tarde", "boa noite"]
+    cliente_eh_saudacao_pura = any(user_msg_lower.strip().startswith(saud) for saud in saudacoes)
+    resposta_tem_saudacao_desnecessaria = any(saud in refined_lower for saud in saudacoes)
+    
+    # Se cliente NÃO fez saudação pura, resposta NÃO deve começar com saudação
+    if not cliente_eh_saudacao_pura and resposta_tem_saudacao_desnecessaria:
+        # Exceção: se usuário fez pergunta e a saudação está no contexto, permitir
+        cliente_fez_pergunta = any(palavra in user_msg_lower for palavra in ["?", "quanto", "como", "quando", "onde", "preciso", "quero"])
+        if not cliente_fez_pergunta:
+            logger.warning(f"[REFINADOR] Validação falhou: saudação desnecessária adicionada")
+            return False
+        
+    # ===== VALIDAÇÕES ORIGINAIS =====
+    
+    # Verificar se não inventou números/valores/prazos específicos (conforme regra 2)
+    suspicious_patterns = [
+        r'\d{1,2}:\d{2}',  # Horários como "14:30"
+        r'R\$\s*\d+',      # Valores como "R$ 100"
+        r'\d+\s*reais?',   # "50 reais"
+        r'(amanhã|hoje|semana|mês|segunda|terça|quarta|quinta|sexta)',  # Datas específicas
+        r'\d+\s*(dias?|horas?|minutos?)',  # Prazos específicos
+        r'\d+%',           # Percentuais
+        r'\d+\s*(km|metros?|cm)'  # Medidas específicas
+    ]
+    
+    for pattern in suspicious_patterns:
+        # Se aparece na refinada mas não estava na base nem na mensagem do usuário
+        if (re.search(pattern, refined_lower) and 
+            not re.search(pattern, base_lower) and 
+            not re.search(pattern, user_msg.lower())):
+            return False
+            
+    return True
+
+
+def _get_conversation_context(phone_number: str, limit: int = 12) -> str:
+    """Busca contexto recente da conversa para refinamento de respostas.
+    
+    Args:
+        phone_number: Número do telefone para buscar histórico
+        limit: Número máximo de mensagens recentes
+        
+    Returns:
+        String formatada com histórico da conversa (máximo 1000 caracteres)
+    """
+    try:
+        if not supabase or not phone_number:
+            return "(Sem histórico disponível)"
+            
+        # Buscar mensagens recentes
+        result = supabase.table(TABLE_MESSAGES)\
+            .select("message_text, is_from_user, created_at")\
+            .eq("phone_number", phone_number)\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .execute()
+            
+        if not result.data:
+            return "(Sem histórico disponível)"
+            
+        # Formatar histórico conforme especificação: "Cliente: [mensagem] | Julia: [resposta]"
+        context_lines = []
+        for msg in reversed(result.data):  # Ordem cronológica
+            sender = "Cliente" if msg.get("is_from_user") else "Julia"
+            text = (msg.get("message_text") or "")[:100]  # Limitar tamanho de cada mensagem
+            if text.strip():
+                context_lines.append(f"{sender}: {text}")
+                
+        # Juntar e limitar a 1000 caracteres como especificado
+        formatted_history = " | ".join(context_lines[-6:]) if context_lines else "(Sem histórico disponível)"
+        
+        # Garantir limite de 1000 caracteres
+        if len(formatted_history) > 1000:
+            formatted_history = formatted_history[-1000:]
+            # Evitar cortar no meio de uma mensagem
+            pipe_pos = formatted_history.find(" | ")
+            if pipe_pos > 0:
+                formatted_history = formatted_history[pipe_pos + 3:]
+                
+        return formatted_history
+        
+    except Exception as e:
+        logger.warning(f"[REFINADOR] Erro ao buscar contexto para {phone_number}: {e}")
+        return "(Sem histórico disponível)"
+
+
+def _generate_smart_fallback(texto: str, nome: str = "") -> str:
+    """Gera fallback inteligente baseado no contexto da mensagem."""
+    texto_lower = (texto or "").lower()
+    
+    # Detectar email sendo fornecido
+    import re
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    emails = re.findall(email_pattern, texto)
+    if emails:
+        return f"Perfeito, recebi o email {emails[0]}. Vou encaminhar as informações solicitadas."
+    
+    # Detectar contexto de obra/materiais/andamento
+    if any(word in texto_lower for word in ["obra", "material", "materiais", "andamento", "guardando resposta", "status da obra"]):
+        return "Entendi sobre o andamento da obra. Vou alinhar com a equipe sobre os materiais e te retorno."
+    
+    # Detectar contexto de comunicação com terceiros/coordenação
+    if any(phrase in texto_lower for phrase in ["falei com ela", "conversei com", "dando retorno", "mandou mensagem", "perguntou", "tô falando com ela"]):
+        return "Compreendo a situação. Vou verificar o status e alinhar as informações para todos."
+    
+    # Detectar contexto de confirmação/aprovação pendente
+    if any(word in texto_lower for word in ["aprovação", "aguardamos", "confirmar", "pode enviar"]):
+        return "Recebido. Vou processar a confirmação e dar continuidade ao processo."
+    
+    # Fallback padrão
+    return "Vou verificar e te retorno com as informações"
 
 # =====================================================================
 # SUPABASE CLIENT
@@ -987,8 +2308,15 @@ def _is_greeting_only(txt: str) -> bool:
 def _needs_clarify(txt: str) -> Optional[str]:
     if not isinstance(txt, str) or not txt.strip():
         return "__ignore_greeting__"
-    if _is_greeting_only(txt):
-        return "__ignore_greeting__"
+    
+    # Se for saudação + conteúdo, NÃO ignore - processe o conteúdo
+    txt_clean = txt.strip()
+    is_just_greeting = _is_greeting_only(txt_clean)
+    
+    # Saudação pura: retorna especial para ser tratada apropriadamente
+    if is_just_greeting:
+        return "__pure_greeting__"  # Nova flag para saudações puras
+    
     if _is_gibberish(txt):
         return "Não consegui entender bem. Pode explicar em uma frase o que você precisa?"
 
@@ -1692,7 +3020,7 @@ def kill_ngrok_processes() -> None:
 def _get_ngrok_public_url() -> Optional[str]:
     for api in ("http://127.0.0.1:4040/api/tunnels", "http://127.0.0.1:4041/api/tunnels"):
         try:
-            r = requests.get(api, timeout=4)
+            r = requests.get(api, timeout=1)  # Reduced timeout to 1s
             data = r.json() or {}
             for t in data.get("tunnels", []):
                 pub = t.get("public_url") or ""
@@ -1846,16 +3174,64 @@ def _formatar_resposta_julia_local(texto: str) -> str:
 
 def _gentle_greeting_reply(incoming_text: str, sender_name: str | None) -> str:
     """
-    Gera uma resposta curta e natural para cumprimentos / smalltalk.
-    Evita frases robotizadas como "Recebi sua mensagem" e prefere tom humano e prestativo.
+    Gera uma resposta curta e natural APENAS para saudações puras.
+    NÃO deve ser chamada para mensagens com conteúdo técnico.
     """
-    name = (sender_name or "").strip()
-    # Se não tivermos nome, usar uma forma neutra
-    if name:
-        # Mantém curta e direta
-        return f"Oi {name}! Tudo bem? Aqui é a Julia — estou por aqui se precisar. Quer que eu já verifique algo pra você?"
+    import re
+    from helpers import get_greeting_by_time
+    
+    txt_lower = (incoming_text or "").lower().strip()
+    
+    # VERIFICAÇÃO ADICIONAL: Se tem conteúdo técnico, não tratar como saudação
+    technical_words = [
+        "projeto", "luminária", "estoque", "retirar", "item", "ponto", "iluminação",
+        "prazo", "entrega", "valor", "preço", "quanto", "disponível", "pendente",
+        "frame", "gesso", "beiral", "traçado", "confirmar", "acrescentar"
+    ]
+    if any(word in txt_lower for word in technical_words):
+        # Não é saudação pura - retorna resposta técnica
+        return "Vou verificar e te retorno com as informações"
+    
+    # Detectar agradecimentos/despedidas
+    is_thank_you = any(word in txt_lower for word in ["obrigad", "valeu", "ok"])
+    
+    # Pega a saudação apropriada para o horário
+    try:
+        time_greeting = get_greeting_by_time()  # "Bom dia", "Boa tarde", etc.
+    except Exception:
+        time_greeting = "Oi"
+    
+    # Detecta se inclui "tudo bem" ou similar
+    has_how_are_you = any(phrase in txt_lower for phrase in ["tudo bem", "td bem", "como vai", "como está"])
+    
+    # Variações de respostas mais dinâmicas
+    if is_thank_you:
+        # Agradecimento/despedida - respostas adequadas
+        responses = [
+            f"De nada! {time_greeting}!",
+            f"Imagina! {time_greeting}!",
+            f"Por nada! {time_greeting}!"
+        ]
+    elif has_how_are_you:
+        # Cliente perguntou como estamos - respostas variadas
+        responses = [
+            f"{time_greeting}! Tudo ótimo, e você?",
+            f"{time_greeting}! Tudo bem sim, como posso ajudar?",
+            f"{time_greeting}! Tudo certo por aqui. Precisa de alguma coisa?"
+        ]
     else:
-        return "Oi! Tudo bem? Aqui é a Julia — estou por aqui se precisar. Quer que eu já verifique algo pra você?"
+        # Saudação simples - respostas variadas  
+        responses = [
+            f"{time_greeting}! Como posso ajudar?",
+            f"{time_greeting}! Posso ajudar em algo?",
+            f"{time_greeting}! Em que posso auxiliar?"
+        ]
+    
+    # Seleciona uma resposta baseada no hash do nome para consistência
+    import hashlib
+    seed = hashlib.md5((sender_name or incoming_text or "").encode()).hexdigest()
+    index = int(seed[:8], 16) % len(responses)
+    return responses[index]
 
 # Campos que não devem ser sobrescritos no Supabase
 NON_WRITABLE_COLS = {"is_group"}
@@ -2336,7 +3712,34 @@ def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | N
             extra = "\n\n📣 **Interno:** acionar Vinícius (assunto administrativo/financeiro)."
         elif route == "log":
             extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
-        text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+        # Para áudios e mídias com transcrição, mostrar apenas a resposta sugerida para evitar confusão
+        meta = (row.get("mensagem") or {}).get("meta") or {}
+        has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+        
+        if has_audio_transcript:
+            # Para áudios, mostrar dados básicos + conteúdo do áudio + resposta sugerida
+            nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+            tel = (row.get("telefone") or "—")
+            
+            # Incluir conteúdo do áudio quando disponível
+            audio_content = ""
+            audio_interpretation = meta.get("audio_interpretation")
+            audio_transcript = meta.get("audio_transcript")
+            
+            if audio_interpretation:
+                audio_content = f"🎤 **Áudio:** {audio_interpretation}"
+                if audio_transcript and audio_transcript != audio_interpretation:
+                    audio_content += f"\n📝 **Transcrição:** {audio_transcript}"
+            elif audio_transcript:
+                audio_content = f"🎤 **Áudio:** {audio_transcript}"
+            else:
+                audio_content = "🎤 **Áudio recebido**"
+            
+            text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n{audio_content}\n\n🤖 **Sugerida:** {suggested}{extra}"
+        else:
+            # Para mensagens normais, usar formato completo
+            text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+        
         _teams_post_card(
             title="✅ Aprovação necessária — Lucenera",
             text=text,
@@ -2357,108 +3760,56 @@ def _teams_format_text(row: dict) -> str:
     nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
     tel  = (row.get("telefone") or "—")
     meta = (row.get("mensagem") or {}).get("meta") or {}
+    original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
 
-    context_block = meta.get("debounce_context_block")
-    # preferir o preview do debounce, se presente
-    preview = meta.get("debounce_batch_preview")
-    batch_s = meta.get("debounce_batch_seconds")
-    batch_n = meta.get("debounce_batch_count")
+    # Análise de mídia para exibição no Teams
+    audio_interpretation = meta.get("audio_interpretation")
+    audio_transcript = meta.get("audio_transcript")
+    image_interpretation = meta.get("image_interpretation")
+    video_transcript = meta.get("video_transcript")
+    document_analysis = meta.get("document_analysis")
 
-    if context_block:
-        msg = context_block.strip()
-    elif preview:
-        header = []
-        if batch_s: header.append(f"{batch_s}s")
-        if batch_n: header.append(f"{batch_n} msgs")
-        prefix = f"({', '.join(header)}) " if header else ""
-        msg = f"{prefix}{preview}"
-    else:
-        msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+    # Construir bloco de conteúdo
+    content_blocks = []
+    
+    # Prioridade: documento > áudio > imagem > vídeo
+    if document_analysis:
+        content_blocks.append(f"📄 **Documento:** {document_analysis}")
+    elif audio_interpretation:
+        content_blocks.append(f"🎤 **Áudio:** {audio_interpretation}")
+        if audio_transcript:
+            content_blocks.append(f"📝 **Transcrição:** {audio_transcript}")
+    elif image_interpretation:
+        content_blocks.append(f"🖼️ **Imagem:** {image_interpretation}")
+    elif video_transcript:
+        content_blocks.append(f"🎥 **Vídeo:** {video_transcript}")
+    
+    # Adicionar texto se houver e não for apenas placeholder de mídia
+    # EVITAR DUPLICAÇÃO: Não adicionar texto quando há interpretação de mídia que já inclui o conteúdo
+    if (original_msg and not original_msg.startswith('[') and not original_msg.endswith(']') 
+        and not audio_interpretation and not document_analysis):
+        content_blocks.append(f"💬 **Mensagem:** {original_msg}")
+    
+    # Se não há conteúdo específico, usar debounce ou fallback
+    if not content_blocks:
+        context_block = meta.get("debounce_context_block")
+        preview = meta.get("debounce_batch_preview")
+        batch_s = meta.get("debounce_batch_seconds")
+        batch_n = meta.get("debounce_batch_count")
 
-    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n🛎️ **Mensagem:** {msg}"
-
-
-def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | None = None) -> None:
-    if _is_group_row(row):
-        print(">> [TEAMS] skip notify (grupo).", flush=True)
-        return
-        if _is_blocked_row(row):
-            print(f">> [TEAMS] skip notify (blocked) for {row.get('telefone')}", flush=True)
-            return
-    # Não notificar se a mensagem é de saída (registrada como enviado pelo time)
-    try:
-        if isinstance(row, dict) and row.get("__entrega_flow__") is True:
-            print(">> [TEAMS] aprovação ignorada (fluxo entregas).", flush=True)
-            return
-    except Exception:
-        pass
-    try:
-        telefone_raw = row.get("telefone") if isinstance(row, dict) else None
-        telefone_norm = _digits_only(telefone_raw)
-        mensagem_bruta = ""
-        msg_payload = row.get("mensagem") if isinstance(row, dict) else None
-        if isinstance(msg_payload, dict):
-            mensagem_bruta = (
-                msg_payload.get("text")
-                or msg_payload.get("body")
-                or msg_payload.get("message")
-                or ""
-            )
-        elif isinstance(msg_payload, str):
-            mensagem_bruta = msg_payload
-        gatilho = (mensagem_bruta or "").strip().strip('"').strip("'").lower()
-        if telefone_norm and telefone_norm in ENTREGADORES_WHATS and "entrega finalizada" in gatilho:
-            print(">> [TEAMS] aprovação ignorada (entrega finalizada por entregador).", flush=True)
-            return
-    except Exception:
-        pass
-    try:
-        meta = (row.get("mensagem") or {}).get("meta") or {}
-        if bool(row.get("fromMe")) or (str(row.get("origem") or "").lower() in {"bot","human"} and str(meta.get("type") or "").lower().startswith("outgoing")):
-            print("-> [TEAMS] skip notify (outgoing/fromMe).", flush=True)
-            return
-    except Exception:
-        pass
-    # mantém compatibilidade: se `channel` for None, usa o webhook padrão
-    if channel:
-        webhook_resolved = get_teams_webhook_for_channel(channel)
-        if not webhook_resolved:
-            print(f"[TEAMS] Nenhum webhook configurado para o canal: {channel}", flush=True)
-            return
-    else:
-        if not TEAMS_WEBHOOK_URL:
-            return
-
-    rid = row.get(ID_COLUMN) or row.get("id")
-    base = _effective_base_url()
-    search_q = row.get("telefone") or str(rid)
-
-    approve = f"{base}/teams/approve?id={rid}&token={TEAMS_ACTION_TOKEN}"
-    reject  = f"{base}/teams/reject?id={rid}&token={TEAMS_ACTION_TOKEN}"
-    admin   = f"{base}/admin?q={search_q}"
-    # atalho para abrir o painel já filtrado para o contato, visando escrever uma resposta manual
-    # use /teams/suggest so the card opens the suggest form that posts to /teams/suggest
-    suggest = f"{base}/teams/suggest?id={rid}&token={TEAMS_ACTION_TOKEN}"
-
-    extra = ""
-    if route == "admin":
-        extra = "\n\n📣 **Interno:** acionar Vinícius (assunto administrativo/financeiro)."
-    elif route == "log":
-        extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
-
-    text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
-
-    _teams_post_card(
-        title="✅ Aprovação necessária — Lucenera",
-        text=text,
-        buttons=[
-            {"name": "✓ Aprovar", "url": approve},
-            {"name": "✗ Rejeitar", "url": reject},
-            {"name": "Sugerir resposta", "url": suggest},
-            {"name": "Abrir painel", "url": admin},
-        ],
-        channel=channel,
-    )
+        if context_block:
+            content_blocks.append(f"🛎️ **Mensagem:** {context_block.strip()}")
+        elif preview:
+            header = []
+            if batch_s: header.append(f"{batch_s}s")
+            if batch_n: header.append(f"{batch_n} msgs")
+            prefix = f"({', '.join(header)}) " if header else ""
+            content_blocks.append(f"🛎️ **Mensagem:** {prefix}{preview}")
+        else:
+            content_blocks.append(f"🛎️ **Mensagem:** {original_msg or '(sem conteúdo visível)'}")
+    
+    conteudo = "\n".join(content_blocks)
+    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n{conteudo}"
 
 
 def _teams_notify_log(row: dict, title: str, status_tag: str, note: str | None = None, channel: str | None = None) -> None:
@@ -2491,7 +3842,34 @@ def _teams_notify_log(row: dict, title: str, status_tag: str, note: str | None =
     admin = f"{base}/admin?q={search_q}"
     suggest = f"{base}/admin?q={search_q}&compose=1"
 
-    text = _teams_format_text(row) + f"\n\n🪪 **Status:** {status_tag}"
+    # Para áudios e mídias com transcrição, mostrar apenas dados básicos para evitar confusão
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+    
+    if has_audio_transcript:
+        # Para áudios, mostrar dados básicos + conteúdo do áudio
+        nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+        tel = (row.get("telefone") or "—")
+        
+        # Incluir conteúdo do áudio quando disponível
+        audio_content = ""
+        audio_interpretation = meta.get("audio_interpretation")
+        audio_transcript = meta.get("audio_transcript")
+        
+        if audio_interpretation:
+            audio_content = f"🎤 **Áudio:** {audio_interpretation}"
+            if audio_transcript and audio_transcript != audio_interpretation:
+                audio_content += f"\n📝 **Transcrição:** {audio_transcript}"
+        elif audio_transcript:
+            audio_content = f"🎤 **Áudio:** {audio_transcript}"
+        else:
+            audio_content = "🎤 **Áudio recebido**"
+        
+        text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n{audio_content}\n\n🪪 **Status:** {status_tag}"
+    else:
+        # Para mensagens normais, usar formato completo
+        text = _teams_format_text(row) + f"\n\n🪪 **Status:** {status_tag}"
+    
     if note:
         text += f"\n\n📝 {note}"
 
@@ -2684,6 +4062,56 @@ def _mark_row_status(
         row["error"] = error
 
 
+def _notify_received_message_processed(row: dict) -> None:
+    """
+    Envia notificação Teams para mensagens que foram processadas 
+    e finalizada (apenas para ignored_finalizer).
+    Só envia se não for de grupo e não for de número bloqueado.
+    """
+    if not isinstance(row, dict):
+        return
+        
+    try:
+        # Não enviar para grupos ou números bloqueados
+        if _is_group_row(row) or _is_blocked_row(row):
+            return
+            
+        # Só enviar notificação para status "ignored_finalizer"
+        # Para outros status, a notificação já foi enviada via _teams_notify
+        current_status = row.get("status", "")
+        if current_status != "ignored_finalizer":
+            return
+            
+        # Criar texto formatado para Teams
+        # Para áudios e mídias com transcrição, mostrar apenas dados básicos para evitar confusão
+        meta = (row.get("mensagem") or {}).get("meta") or {}
+        has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+        
+        if has_audio_transcript:
+            # Para áudios, mostrar apenas dados básicos
+            nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+            tel = (row.get("telefone") or "—")
+            text_formatted = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n🎤 **Áudio processado**"
+        else:
+            # Para mensagens normais, usar formato completo
+            text_formatted = _teams_format_text(row)
+        
+        # Adicionar status
+        text_formatted += f"\n\n✅ **Status:** {current_status}"
+        
+        # Enviar para Teams
+        webhook_url = TEAMS_WEBHOOK_URL
+        if webhook_url:
+            _teams_post_card(
+                title="📩 Mensagem processada — Lucenera", 
+                text=text_formatted, 
+                buttons=None, 
+                color="36A64F"  # cor verde para mensagens processadas
+            )
+    except Exception as e:
+        print(f">> [WARN] falha ao notificar mensagem processada no Teams: {e}", flush=True)
+
+
 def processar_inline(row: dict) -> None:
     """
     Fluxo DM-only (apenas conversas diretas) com portão de contexto.
@@ -2738,8 +4166,10 @@ def processar_inline(row: dict) -> None:
         try:
             return is_greeting(texto)
         except NameError:
-            t = (texto or "").strip().lower()
-            return t in {"oi","olá","ola","e ai","eai","tudo bem","td bem","bom dia","boa tarde","boa noite"}
+            # Fallback usando GREETINGS_RE se is_greeting não estiver disponível
+            if not isinstance(texto, str):
+                return False
+            return bool(GREETINGS_RE.match(texto.strip()))
 
     def _safe_is_followup(texto: str) -> bool:
         try:
@@ -2869,9 +4299,12 @@ def processar_inline(row: dict) -> None:
 
         # Texto + enrich de mídia
         txt = mensagem_dict.get("text") or ""
+        media_analysis = None
         try:
+            print(f">> [MEDIA] Tentando enrich para row_id={row_id}, txt_inicial='{txt[:100]}'", flush=True)
             enriched = enrich_row_with_media_text(row)
-            if enriched.get("changed"):
+            if enriched and enriched.get("changed"):
+                print(f">> [MEDIA] Enrich bem-sucedido, changed=True", flush=True)
                 row = enriched["row"]
                 if _column_exists("mensagem"):
                     _supabase_update_safe(row_id, {"mensagem": row.get("mensagem")})
@@ -2883,9 +4316,29 @@ def processar_inline(row: dict) -> None:
                 if not isinstance(meta, dict):
                     meta = {}
                     mensagem_dict["meta"] = meta
-                txt = (mensagem_dict.get("text") or txt)
+                txt_novo = (mensagem_dict.get("text") or txt)
+                print(f">> [MEDIA] Texto após enrich: '{txt_novo[:200]}'", flush=True)
+                
+                # Extrair análise de mídia para o Teams
+                if isinstance(meta, dict):
+                    media_analysis = {
+                        'audio_interpretation': meta.get('audio_interpretation'),
+                        'image_interpretation': meta.get('image_interpretation'), 
+                        'video_transcript': meta.get('video_transcript'),
+                        'document_analysis': meta.get('document_analysis')
+                    }
+                    # Filtra apenas análises que existem
+                    media_analysis = {k: v for k, v in media_analysis.items() if v}
+                    if media_analysis:
+                        print(f">> [MEDIA] Análise extraída: {list(media_analysis.keys())}", flush=True)
+                
+                txt = txt_novo
+            else:
+                print(f">> [MEDIA] Enrich retornou changed=False ou None", flush=True)
         except Exception as _e_media:
-            print(">> aviso: enrich_row_with_media_text falhou:", _e_media, flush=True)
+            print(f">> [ERRO] enrich_row_with_media_text falhou para row_id={row_id}:", _e_media, flush=True)
+            import traceback
+            print(f">> [ERRO] Traceback: {traceback.format_exc()}", flush=True)
 
         audit_preview = (txt[:80] if txt else "").replace("\n", " ")
         APP_LOG.info(
@@ -2908,19 +4361,59 @@ def processar_inline(row: dict) -> None:
             return
 
         if is_finalizing_message(txt):
-            _mark_row_status(
-                row,
-                "ignored_finalizer",
-                ai_draft=None,
-                used_ai=False,
-                error="Mensagem de encerramento (ok/fechou).",
-            )
-            _teams_notify_log(row, title="🧹 Finalizador detectado — log", status_tag="ignored_finalizer")
-            return
+            # VERIFICAR SE HÁ CONTEÚDO TÉCNICO JUNTO COM O FINALIZER
+            txt_lower = txt.lower()
+            technical_keywords = [
+                "projeto", "planta", "pd", "desenho", "perfis", "forro", "material", "romaneio",
+                "orçamento", "valor", "preço", "entrega", "prazo", "instalar", "técnico",
+                "luminária", "led", "driver", "watts", "medida", "especificação"
+            ]
+            
+            has_technical_content = any(keyword in txt_lower for keyword in technical_keywords)
+            has_question = "?" in txt
+            has_conditional = any(word in txt_lower for word in ["mas", "porém", "e o", "e a"])
+            has_future_action = any(phrase in txt_lower for phrase in ["vou mandar", "vou enviar", "vou aguardar"])
+            
+            # SE tem conteúdo técnico, pergunta, condicional ou ação futura -> NÃO é finalizer puro
+            if has_technical_content or has_question or has_conditional or has_future_action:
+                print(f">> [FINALIZER] Mensagem tem finalizer MAS conteúdo técnico/pergunta/ação - vai para IA: '{txt[:50]}'", flush=True)
+                pass  # Continua o fluxo normal, vai para IA
+            else:
+                # É realmente apenas finalização
+                _mark_row_status(
+                    row,
+                    "ignored_finalizer", 
+                    ai_draft=None,
+                    used_ai=False,
+                    error="Mensagem de encerramento/confirmação - sem ação necessária.",
+                )
+                _teams_notify_log(row, title="✅ Confirmação/Finalização detectada", status_tag="ignored_finalizer")
+                return
 
-        # Smalltalk (saudação/ack/reciprocidade)
+        # PRIORIDADE: Verificar finalizers ANTES de smalltalk
+        is_finalizer = is_finalizing_message(txt)
+        
+        # Verificar se há conteúdo técnico na mensagem
+        txt_lower = txt.lower()
+        technical_keywords = [
+            # Projeto/construção
+            "projeto", "planta", "pd", "profundidade", "forro", "acabado", "final", "desenho", "perfis",
+            "luminária", "ponto", "iluminação", "beiral", "gesso", "traçado", "layout", 
+            # Estoque/materiais  
+            "estoque", "retirar", "conseguir", "disponível", "separar", "romaneio", "itens", "material",
+            # Técnicas específicas
+            "watts", "temperatura", "voltagem", "medida", "dimensão", "modelo", "especificação",
+            # Preços/prazos
+            "preço", "valor", "quanto", "orçamento", "prazo", "entrega", "quando",
+            # Perguntas técnicas
+            "como", "onde", "qual", "quando", "consegue", "pode", "tem", "instalar"
+        ]
+        has_technical_content = any(keyword in txt_lower for keyword in technical_keywords)
+        
+        # Smalltalk (saudação/ack/reciprocidade) - mas só se NÃO for finalizer E NÃO tiver conteúdo técnico
         try:
-            smalltalk = (_safe_is_greeting(txt) or is_ack(txt) or is_reciprocidade(txt)) and (not is_finalizing_message(txt))
+            is_greeting_only = (_safe_is_greeting(txt) or is_ack(txt) or is_reciprocidade(txt))
+            smalltalk = is_greeting_only and (not is_finalizer) and (not has_technical_content)
         except Exception:
             smalltalk = False
         smalltalk_hint = (
@@ -2957,8 +4450,76 @@ def processar_inline(row: dict) -> None:
 
         # Clarify
         clarify = _needs_clarify(txt)
-        needs_clarify = bool(clarify and clarify != "__ignore_greeting__")
+        is_pure_greeting = (clarify == "__pure_greeting__")
+        needs_clarify = bool(clarify and clarify not in {"__ignore_greeting__", "__pure_greeting__"})
         clarify_hint = clarify if needs_clarify else None
+
+        # TRATAMENTO ESPECIAL: Saudação pura (sem conteúdo adicional)
+        if is_pure_greeting:
+            sender_name = str(row.get("sender_name") or (row.get("nome") or {}).get("display", "") or "").strip()
+            greeting_response = _gentle_greeting_reply(txt, sender_name)
+            
+            if APPROVAL_MODE:
+                _supabase_update_safe(row_id, {
+                    "ai_draft": greeting_response,
+                    "status": "awaiting_approval",
+                    "used_ai": True,
+                    "error": None,
+                    "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                })
+                try:
+                    _teams_notify(row, greeting_response, None, channel="projetos")
+                except Exception as e:
+                    print(">> [WARN] falha ao enviar card de aprovação para saudação:", e, flush=True)
+            else:
+                sent_ok = False
+                if OUTGOING_ENABLED:
+                    try:
+                        sent_ok = bool(send_text_from_row(row, greeting_response))
+                    except Exception as e_send:
+                        print(">> aviso: falha ao enviar WhatsApp (saudação):", e_send, flush=True)
+                
+                if sent_ok:
+                    _supabase_update_safe(row_id, {
+                        "final_out": greeting_response,
+                        "status": "sent",
+                        "used_ai": True,
+                        "approved": True,
+                        "error": None,
+                        "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                    })
+                    _teams_notify_log(row, title="👋 Saudação enviada (auto) — log", status_tag="sent")
+                    try:
+                        supabase.table("mensagens").insert({
+                            "telefone": telefone,
+                            "group_id": None,
+                            "mensagem": {"text": greeting_response, "meta": {"type": "outgoing", "status": "SENT"}},
+                            "fromMe": True, "from_me": True, "direction": "out", "status": "SENT", "origem": "bot"
+                        }).execute()
+                    except Exception as e:
+                        print(">> aviso: falha ao registrar fala do bot (saudação):", e, flush=True)
+                else:
+                    _supabase_update_safe(row_id, {
+                        "ai_draft": greeting_response,
+                        "status": ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
+                        "used_ai": True,
+                        "approved": False,
+                        "error": (None if not OUTGOING_ENABLED else "Falha no envio WhatsApp"),
+                        "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                    })
+                    _teams_notify_log(
+                        row,
+                        title=("🧪 DRY RUN (saudação) — log" if not OUTGOING_ENABLED else "⚠️ Erro de envio (saudação) — log"),
+                        status_tag=("sent_dry_run" if not OUTGOING_ENABLED else "error")
+                    )
+            
+            APP_LOG.info(
+                "PURE_GREETING_HANDLED id=%s tel=%s response=%s",
+                row_id,
+                telefone or "-",
+                greeting_response[:50]
+            )
+            return
 
         # Horário comercial
         OOH_STRATEGY = (os.getenv("OOH_STRATEGY", "reply") or "reply").lower()
@@ -3036,14 +4597,25 @@ def processar_inline(row: dict) -> None:
 
             lock = _RUN_LOCKS[chat_key]
             with lock:
-                resposta = gerar_resposta_com_chatgpt(
+                print(f">> [CHATGPT] Gerando resposta para row_id={row_id}, texto_len={len(texto_para_ia)}", flush=True)
+                resposta_base = gerar_resposta_com_chatgpt(
                     texto_para_ia,
                     user_identifier,
                     mensagem_id=row_id,
                     telefone=telefone,
                 )
+                print(f">> [CHATGPT] Resposta recebida: len={len(resposta_base or '')}, preview='{(resposta_base or '')[:100]}'", flush=True)
+                
+                # Aplicar sistema de refinamento com IA
+                sender_name = _safe_extract_sender_name(row)
+                original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+                
+                # Usar função de humanização que inclui refinamento IA
+                resposta = _humanize_robotic_response(resposta_base, sender_name, original_msg)
         except Exception as exc:
-            print(">> erro: gerar_resposta_com_chatgpt falhou:", exc, flush=True)
+            print(f">> [ERRO] gerar_resposta_com_chatgpt falhou para row_id={row_id}:", exc, flush=True)
+            import traceback
+            print(f">> [ERRO] Traceback: {traceback.format_exc()}", flush=True)
             _supabase_update_safe(row_id, {
                 "status": "error",
                 "used_ai": False,
@@ -3054,19 +4626,48 @@ def processar_inline(row: dict) -> None:
             return
 
         if not resposta or not resposta.strip():
-            APP_LOG.warning(
-                "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s",
-                row_id,
-                telefone or "-",
-            )
-            _supabase_update_safe(row_id, {
-                "status": "ignored_empty_ai",
-                "used_ai": False,
-                "ai_draft": None,
-                "error": "ChatGPT retornou vazio"
-            })
-            _teams_notify_log(row, title="🧹 Resposta vazia — log", status_tag="ignored_empty_ai")
-            return
+            print(f">> [PROBLEMA] ChatGPT retornou vazio! row_id={row_id}, texto_input='{texto_para_ia[:200]}'", flush=True)
+            
+            # FALLBACK: tentar resposta genérica baseada no conteúdo
+            fallback_response = None
+            if media_analysis:
+                # Se há análise de mídia, gerar resposta baseada nisso
+                if 'document_analysis' in media_analysis:
+                    fallback_response = "Recebi o documento. Vou analisar e te retorno com as informações solicitadas."
+                elif 'image_interpretation' in media_analysis:
+                    fallback_response = "Recebi a imagem. Vou verificar e te respondo em seguida."
+                elif 'audio_interpretation' in media_analysis:
+                    fallback_response = "Recebi o áudio. Vou processar e te retorno."
+            elif txt and len(txt.strip()) > 10:
+                # Detectar se é questão financeira/comercial
+                if _is_financial_question(txt):
+                    fallback_response = "Vou consultar valores e condições com o financeiro e te retorno com as informações."
+                else:
+                    # Resposta genérica para texto substantivo
+                    fallback_response = "Recebi sua mensagem. Vou verificar com a equipe e te retorno em seguida."
+            
+            if fallback_response:
+                print(f">> [FALLBACK] Usando resposta fallback: '{fallback_response}'", flush=True)
+                # IMPORTANTE: Aplicar sistema de refinamento também nos fallbacks
+                sender_name = _safe_extract_sender_name(row)
+                original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+                resposta = _humanize_robotic_response(fallback_response, sender_name, original_msg)
+                print(f">> [FALLBACK] Sistema de humanização aplicado ao fallback", flush=True)
+            else:
+                APP_LOG.warning(
+                    "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s texto='%s'",
+                    row_id,
+                    telefone or "-",
+                    texto_para_ia[:100]
+                )
+                _supabase_update_safe(row_id, {
+                    "status": "ignored_empty_ai",
+                    "used_ai": False,
+                    "ai_draft": None,
+                    "error": f"ChatGPT retornou vazio para texto: '{txt[:100]}'"
+                })
+                _teams_notify_log(row, title="🧹 Resposta vazia — log", status_tag="ignored_empty_ai")
+                return
 
         analysis_obj = {
             "chat_key": chat_key,
@@ -3093,6 +4694,11 @@ def processar_inline(row: dict) -> None:
 
             # se o modelo retornou resposta_cliente, usamos ela como ai_draft
             ai_for_client = rc.strip() if isinstance(rc, str) and rc.strip() else resposta
+            
+            # Aplicar humanização para evitar respostas robóticas
+            sender_name = _safe_extract_sender_name(row)
+            original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+            ai_for_client = _humanize_robotic_response(ai_for_client, sender_name, original_msg)
 
             _supabase_update_safe(row_id, {
                 "ai_draft": ai_for_client,
@@ -3101,6 +4707,12 @@ def processar_inline(row: dict) -> None:
                 "error": None,
                 "analysis": analysis_obj,
             })
+            
+            # Atualizar row local para testes
+            row["ai_draft"] = ai_for_client
+            row["status"] = "awaiting_approval"
+            row["used_ai"] = True
+            row["error"] = None
 
             # Sempre enviar o card de aprovação para o canal principal (projetos)
             try:
@@ -3191,6 +4803,9 @@ def processar_inline(row: dict) -> None:
                     title=("🧪 DRY RUN (auto) — log" if not OUTGOING_ENABLED else "⚠️ Erro de envio — log"),
                     status_tag=("sent_dry_run" if not OUTGOING_ENABLED else "error")
                 )
+        
+        # Notificar no Teams mensagens que estavam 'received' mas foram processadas
+        _notify_received_message_processed(row)
 
     except Exception as e:
         print(">> processar_inline erro:", e, flush=True)
@@ -3511,173 +5126,8 @@ def _cast_key_for_query(val: str):
 #     _supabase_update_safe(_cast_key_for_query(rid), {"approved": False, "status": "rejected"})
 #     return redirect(url_for("admin"))
 # =========================
-# TEAMS - Sugerir resposta manual
+# TEAMS - routes handled by blueprint routes/teams_suggest.py
 # =========================
-@app.get("/teams/suggest")
-def teams_suggest():
-    from flask import render_template_string, request
-    msg_id = request.args.get("id")
-    token = request.args.get("token")
-    # Debug: log incoming args for diagnosis
-    try:
-        incoming_args = dict(request.args)
-    except Exception:
-        incoming_args = {}
-    print(f">> /teams/suggest (GET) called args={incoming_args}", flush=True)
-    if token != (TEAMS_ACTION_TOKEN or ""):
-        print(f">> /teams/suggest (GET): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-        return "Token inválido", 403
-
-    # Página simples de sugestão
-    html = f"""
-    <html>
-    <head>
-        <meta charset='utf-8'>
-        <title>Sugerir resposta - Lucenera</title>
-        <style>
-            body {{
-                font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-                margin: 40px;
-                color: #333;
-            }}
-            textarea {{
-                width: 100%;
-                height: 140px;
-                font-size: 15px;
-                padding: 8px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                resize: vertical;
-            }}
-            button {{
-                background: #2563eb;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                cursor: pointer;
-                margin-top: 10px;
-            }}
-            button:hover {{ background: #1d4ed8; }}
-        </style>
-    </head>
-    <body>
-        <h2>💬 Sugerir resposta manual</h2>
-        <form method="post" action="/teams/suggest">
-            <input type="hidden" name="id" value="{msg_id}">
-            <input type="hidden" name="token" value="{token}">
-            <textarea name="texto" placeholder="Escreva aqui a resposta sugerida..."></textarea><br>
-            <button type="submit">Enviar sugestão</button>
-        </form>
-    </body>
-    </html>
-    """
-    return render_template_string(html)
-
-
-
-# ========================================
-# ROTA ANTIGA - DESABILITADA (usar blueprint teams_suggest.py)
-# ========================================
-# @app.post("/teams/suggest")
-# def teams_suggest_submit():
-#     # PASSO 1 - Extrair dados do payload JSON
-#     data = request.get_json(silent=True) or {}
-#     telefone = data.get('telefone')
-#     mensagem_sugerida = data.get('mensagem') or data.get('suggestion')
-#     msg_id_original = data.get('msg_id')
-#     contexto = data.get('contexto')
-#     resposta_bot_original = data.get('resposta_bot')
-#     token = data.get('token') or request.args.get('token') or request.headers.get('Authorization')
-#
-#     # === DEBUG TOKEN ===
-#     print(f"\n{'='*60}", flush=True)
-#     print(f"[DEBUG TOKEN] Payload completo: {data}", flush=True)
-#     print(f"[DEBUG TOKEN] Token recebido (raw): {token!r}", flush=True)
-#     print(f"[DEBUG TOKEN] Token recebido (type): {type(token)}", flush=True)
-#     print(f"[DEBUG TOKEN] Token recebido (len): {len(token) if token else 0}", flush=True)
-#     print(f"[DEBUG TOKEN] Token esperado (raw): {TEAMS_ACTION_TOKEN!r}", flush=True)
-#     print(f"[DEBUG TOKEN] Token esperado (type): {type(TEAMS_ACTION_TOKEN)}", flush=True)
-#     print(f"[DEBUG TOKEN] Token esperado (len): {len(TEAMS_ACTION_TOKEN) if TEAMS_ACTION_TOKEN else 0}", flush=True)
-#     print(f"[DEBUG TOKEN] Tokens são iguais? {token == TEAMS_ACTION_TOKEN}", flush=True)
-#     print(f"[DEBUG TOKEN] TEAMS_ACTION_TOKEN from env: {os.getenv('TEAMS_ACTION_TOKEN')!r}", flush=True)
-#     print(f"{'='*60}\n", flush=True)
-#     # === FIM DEBUG ===
-#
-#     print(f">> /teams/suggest (POST) payload={data}", flush=True)
-#     if token != (TEAMS_ACTION_TOKEN or ""):
-#         print(f">> /teams/suggest (POST): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-#         return jsonify({"ok": False, "error": "Token inválido"}), 403
-#     if not telefone or not mensagem_sugerida:
-#         return jsonify({"ok": False, "error": "Telefone e mensagem são obrigatórios"}), 400
-#
-#     # PASSO 2 - Enviar mensagem sugerida para o WhatsApp via Z-API
-#     envio_ok = False
-#     erro_envio = None
-#     if OUTGOING_ENABLED:
-#         try:
-#             envio_ok = send_text_to(phone=telefone, message=mensagem_sugerida)
-#         except Exception as e:
-#             erro_envio = str(e)
-#             print(f">> Erro ao enviar sugestão para WhatsApp: {e}", flush=True)
-#
-#     # PASSO 3 - Salvar sugestão no Supabase
-#     rid = _cast_key_for_query(msg_id_original) if msg_id_original else None
-#     row = None
-#     if rid and supabase:
-#         try:
-#             row = supabase.table(TABLE).select("*").eq(ID_COLUMN, rid).single().execute().data
-#         except Exception as e:
-#             print(f">> aviso: falha ao buscar row original para sugestão: {e}", flush=True)
-#
-#     # Atualiza/insere registro da sugestão
-#     update_payload = {
-#         "final_out": mensagem_sugerida if envio_ok or not OUTGOING_ENABLED else None,
-#         "manual_reply": mensagem_sugerida,
-#         "approved": True,
-#         "approved_by": "Teams",
-#         "status": "sent" if envio_ok else ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
-#         "origem": "human_suggestion",
-#         "used_ai": False,
-#         "error": erro_envio,
-#         "contexto": contexto,
-#         "resposta_bot": resposta_bot_original,
-#     }
-#     if rid and supabase:
-#         _supabase_update_safe(rid, update_payload)
-#     else:
-#         # Se não houver msg_id, salva como novo registro
-#         payload = {
-#             "telefone": telefone,
-#             "mensagem": {"text": mensagem_sugerida, "meta": {"contexto": contexto, "resposta_bot": resposta_bot_original}},
-#             "data": _now_iso(),
-#             "manual_reply": mensagem_sugerida,
-#             "approved": True,
-#             "approved_by": "Teams",
-#             "status": "sent" if envio_ok else ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
-#             "origem": "human_suggestion",
-#             "used_ai": False,
-#             "error": erro_envio,
-#         }
-#         if supabase:
-#             try:
-#                 supabase.table(TABLE).insert(payload).execute()
-#             except Exception as e:
-#                 print(f">> aviso: falha ao inserir sugestão sem msg_id: {e}", flush=True)
-#
-#     # PASSO 4 - Registrar sugestão humana para histórico
-#     _record_human_suggestion(
-#         telefone=telefone,
-#         texto=mensagem_sugerida,
-#         group_id=(row or {}).get("group_id") if row else None,
-#         client_row=row,
-#         source="teams",
-#         author="Teams",
-#         reply_to=rid,
-#     )
-#
-#     print(f">> Sugestão registrada via Teams (telefone={telefone}, id={rid}) sent={envio_ok}")
-#     return jsonify({"ok": True, "sent": envio_ok, "telefone": telefone, "msg_id": rid})
 
 @app.get("/favicon.ico")
 def favicon(): return "", 204
@@ -3900,27 +5350,35 @@ if __name__ == "__main__":
         except Exception as e:
             print(">> ngrok: não inicializado:", e, flush=True)
 
-    # Valida persistência de public base (remove se estiver desatualizada)
-    try:
-        _validate_persisted_public_base()
-    except Exception:
-        pass
+    # Move network operations to background thread to not block Flask startup
+    def _init_network_setup():
+        try:
+            # Valida persistência de public base (remove se estiver desatualizada)
+            try:
+                _validate_persisted_public_base()
+            except Exception:
+                pass
 
-    public_base = PUBLIC_BASE_URL or _get_ngrok_public_url()
-    if public_base:
-        print(f">> URL pública detectada: {public_base}", flush=True)
-    # Mostra qual URL efetiva será usada em links de Teams/cards
-    try:
-        effective = _effective_base_url()
-        print(f">> URL efetiva usada em links (PUBLIC_BASE_URL/ngrok/localhost): {effective}", flush=True)
-        if str(effective).startswith("http://127.0.0.1"):
-            print(
-                ">> AVISO: URL efetiva é localhost. Pessoas fora desta máquina não poderão acessar os links. "
-                "Inicie ngrok ou defina PUBLIC_BASE_URL para uma URL pública.",
-                flush=True
-            )
-    except Exception:
-        pass
+            public_base = PUBLIC_BASE_URL or _get_ngrok_public_url()
+            if public_base:
+                print(f">> URL pública detectada: {public_base}", flush=True)
+            # Mostra qual URL efetiva será usada em links de Teams/cards
+            try:
+                effective = _effective_base_url()
+                print(f">> URL efetiva usada em links (PUBLIC_BASE_URL/ngrok/localhost): {effective}", flush=True)
+                if str(effective).startswith("http://127.0.0.1"):
+                    print(
+                        ">> AVISO: URL efetiva é localhost. Pessoas fora desta máquina não poderão acessar os links. "
+                        "Inicie ngrok ou defina PUBLIC_BASE_URL para uma URL pública.",
+                        flush=True
+                    )
+            except Exception:
+                pass
+        except Exception as e:
+            print(f">> Erro na configuração de rede: {e}", flush=True)
+
+    # Start network setup in background
+    threading.Thread(target=_init_network_setup, daemon=True).start()
 
     if not supabase:
         print(">> AVISO: Supabase não está configurado/operante. /admin mostrará 'Supabase não configurado.'", flush=True)
@@ -3929,10 +5387,12 @@ if __name__ == "__main__":
         # Run initial webhook update in background to avoid blocking startup if Z-API is slow/unreachable
         def _init_zapi_update():
             try:
-                if public_base:
-                    ok = _zapi_update_webhooks(public_base, WEBHOOK_PATH)
+                # Get public_base locally since it was moved to network setup thread
+                local_public_base = PUBLIC_BASE_URL or _get_ngrok_public_url()
+                if local_public_base:
+                    ok = _zapi_update_webhooks(local_public_base, WEBHOOK_PATH)
                     if ok:
-                        _last_webhook["target"] = f"{public_base.rstrip('/')}{WEBHOOK_PATH}"
+                        _last_webhook["target"] = f"{local_public_base.rstrip('/')}{WEBHOOK_PATH}"
                         _last_webhook["fail_count"] = 0
                         _last_webhook["next_retry"] = 0
             except Exception as e:

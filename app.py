@@ -128,6 +128,161 @@ ID_COLUMN = os.getenv("SUPABASE_ID_COLUMN", "id_num")
 APPROVAL_MODE = os.getenv("APPROVAL_MODE", "false").lower() in ("1", "true", "yes")
 OUTGOING_ENABLED = os.getenv("OUTGOING_ENABLED", "true").lower() in ("1", "true", "yes")
 FORCE_PROCESS_ALL_GROUPS = os.getenv("FORCE_PROCESS_ALL_GROUPS", "false").lower() in ("1", "true", "yes")
+
+# === REGEX PATTERNS ===
+GREETINGS_RE = re.compile(
+    r"^(oi|ol[aá]|e?ai|bo(a|m)\s?(tarde|noite|dia)|td ?bem|tudo ?bem|beleza|blz|como vai|(muito\s+)?obrigad[oa]|valeu|ok\s+(obrigad|bom))",
+    re.I
+)
+FOLLOWUP_RE = re.compile(
+    r"\b(deu certo|e (ai|a[ií])\?|como ficou|conseguiu|e sobre|e aquela|e o? que|tem novidade|me fala|me retorna|resposta|atualiza)\b",
+    re.I
+)
+LOGISTICA_RE = re.compile(
+    r"\b(entrega|prazo|rastrea|instala[cç][aã]o|retirada|nota\s*fiscal|nf|troca|devolu[cç][aã]o|garantia|led|driver|spot|lumin[aá]ria)\b",
+    re.I
+)
+ACK_RE = re.compile(r"\b(obrigad[aoa]|valeu|perfeito|ótimo|otimo|combinado|ok(?:ay)?)\b", re.I)
+RECIPROCIDADE_RE = re.compile(r"\b(tudo|td)\s*(bem|bom)\s*(e\s*voc[eê])\b", re.I)
+
+# === FUNÇÕES DE DETECÇÃO DE PADRÕES ===
+def is_greeting(txt: str) -> bool:
+    """Detecta saudações usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(GREETINGS_RE.match(txt.strip()))
+
+def is_ack(txt: str) -> bool:
+    """Detecta agradecimentos/confirmações usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(ACK_RE.search(txt))
+
+def is_reciprocidade(txt: str) -> bool:
+    """Detecta reciprocidade (ex: 'tudo bem e você?') usando regex pattern."""
+    if not isinstance(txt, str):
+        return False
+    return bool(RECIPROCIDADE_RE.search(txt))
+
+def _safe_extract_sender_name(row: dict) -> Optional[str]:
+    """Extrai o nome do remetente do row de forma segura."""
+    try:
+        # Tenta extrair de diferentes locais onde o nome pode estar
+        sender_name = row.get("sender_name")
+        if isinstance(sender_name, str) and sender_name.strip():
+            return sender_name.strip()
+        
+        # Tenta extrair do campo 'nome'
+        nome = row.get("nome")
+        if isinstance(nome, dict):
+            display = nome.get("display")
+            if isinstance(display, str) and display.strip():
+                return display.strip()
+        elif isinstance(nome, str) and nome.strip():
+            return nome.strip()
+            
+        # Tenta extrair de outros campos possíveis
+        for field in ["contact_name", "from_name", "user_name"]:
+            value = row.get(field)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+                
+        return None
+    except Exception:
+        return None
+
+
+def _safe_extract_sender_name(row: dict) -> Optional[str]:
+    """Extrai o nome do remetente do row de forma segura."""
+    try:
+        # Tenta extrair de diferentes locais onde o nome pode estar
+        sender_name = row.get("sender_name")
+        if isinstance(sender_name, str) and sender_name.strip():
+            return sender_name.strip()
+        
+        # Tenta extrair do campo 'nome'
+        nome = row.get("nome")
+        if isinstance(nome, dict):
+            display = nome.get("display")
+            if isinstance(display, str) and display.strip():
+                return display.strip()
+        elif isinstance(nome, str) and nome.strip():
+            return nome.strip()
+            
+        # Tenta extrair de outros campos possíveis
+        for field in ["contact_name", "from_name", "user_name"]:
+            value = row.get(field)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+                
+        return None
+    except Exception:
+        return None
+
+
+def _gentle_greeting_reply(incoming_text: str, sender_name: str | None) -> str:
+    """
+    Gera uma resposta curta e natural APENAS para saudações puras.
+    NÃO deve ser chamada para mensagens com conteúdo técnico.
+    """
+    import re
+    from helpers import get_greeting_by_time
+    
+    txt_lower = (incoming_text or "").lower().strip()
+    
+    # VERIFICAÇÃO ADICIONAL: Se tem conteúdo técnico, não tratar como saudação
+    technical_words = [
+        "projeto", "luminária", "estoque", "retirar", "item", "ponto", "iluminação",
+        "prazo", "entrega", "valor", "preço", "quanto", "disponível", "pendente",
+        "frame", "gesso", "beiral", "traçado", "confirmar", "acrescentar"
+    ]
+    if any(word in txt_lower for word in technical_words):
+        # Não é saudação pura - retorna resposta técnica
+        return "Vou verificar e te retorno com as informações"
+    
+    # Detectar agradecimentos/despedidas
+    is_thank_you = any(word in txt_lower for word in ["obrigad", "valeu", "ok"])
+    
+    # Pega a saudação apropriada para o horário
+    try:
+        time_greeting = get_greeting_by_time()  # "Bom dia", "Boa tarde", etc.
+    except Exception:
+        time_greeting = "Oi"
+    
+    # Detecta se inclui "tudo bem" ou similar
+    has_how_are_you = any(phrase in txt_lower for phrase in ["tudo bem", "td bem", "como vai", "como está"])
+    
+    # Variações de respostas mais dinâmicas
+    if is_thank_you:
+        # Agradecimento/despedida - respostas adequadas
+        responses = [
+            f"De nada! {time_greeting}!",
+            f"Imagina! {time_greeting}!",
+            f"Por nada! {time_greeting}!"
+        ]
+    elif has_how_are_you:
+        # Cliente perguntou como estamos - respostas variadas
+        responses = [
+            f"{time_greeting}! Tudo ótimo, e você?",
+            f"{time_greeting}! Tudo bem sim, como posso ajudar?",
+            f"{time_greeting}! Tudo certo por aqui. Precisa de alguma coisa?"
+        ]
+    else:
+        # Saudação simples - respostas variadas  
+        responses = [
+            f"{time_greeting}! Como posso ajudar?",
+            f"{time_greeting}! Posso ajudar em algo?",
+            f"{time_greeting}! Em que posso auxiliar?"
+        ]
+    
+    # Seleciona uma resposta baseada no hash do nome para consistência
+    import hashlib
+    seed = hashlib.md5((sender_name or incoming_text or "").encode()).hexdigest()
+    index = int(seed[:8], 16) % len(responses)
+    return responses[index]
+
+
+# Configurações
 CTX_HISTORY_LIMIT = int(os.getenv("CTX_HISTORY_LIMIT", "10"))
 DEBOUNCE_SECONDS = int(os.getenv("DEBOUNCE_SECONDS", "45"))
 TEAMS_ACTION_TOKEN = os.getenv("TEAMS_ACTION_TOKEN", "")
@@ -542,6 +697,26 @@ def _strip_filler_phrases(s: str) -> str:
     return re.sub(r"\s{2,}", " ", out).strip(" .;,-")
 
 
+def _is_financial_question(txt: str) -> bool:
+    """Detecta se a mensagem é uma questão financeira/comercial."""
+    if not txt:
+        return False
+    
+    txt_lower = txt.lower()
+    
+    # Palavras-chave financeiras/comerciais
+    financial_keywords = [
+        'valor', 'preço', 'quanto', 'custa', 'orçamento', 'parcel', 
+        'desconto', 'pagamento', 'financeiro', 'entrada', 'vista', 
+        'cartão', 'boleto', 'pix', 'transferência', 'fechamos', 
+        'fechou', 'fechar', 'negócio', 'proposta', 'contrato',
+        'em quantas', 'em 3x', 'em 4x', 'parcelas', 'condições',
+        'reais', 'r$', 'mil', 'euros', 'dólar'
+    ]
+    
+    return any(keyword in txt_lower for keyword in financial_keywords)
+
+
 def _humanize_robotic_response(resposta: str, sender_name: Optional[str], original_msg: str) -> str:
     """Same humanizer as in main.py — rewrite robotic assistant replies to human tone."""
     if not resposta:
@@ -551,28 +726,60 @@ def _humanize_robotic_response(resposta: str, sender_name: Optional[str], origin
     robot_patterns = ["recebi sua mensagem", "mensagem recebida", "entendi", "recebido", "estou verificando", "vou verificar"]
     if not any(p in low for p in robot_patterns):
         return resposta
+    
+    low_orig = (original_msg or "").lower()
+    
+    # === VERIFICAÇÃO DE CONTEÚDO TÉCNICO PRIMEIRO ===
+    
+    # PERGUNTAS SOBRE PROJETO/ILUMINAÇÃO
+    projeto_patterns = [
+        "projeto", "luminária", "luminaria", "ponto", "acrescentar", "iluminação", "iluminacao",
+        "beiral", "gesso", "traçado", "layout", "porro", "garagem", "manter assim", "confirmar"
+    ]
+    if any(pattern in low_orig for pattern in projeto_patterns):
+        return _ensure_ai_prefix("Vou confirmar com a equipe responsável pelo projeto e te retorno com a validação")
+    
+    # PERGUNTAS SOBRE ESTOQUE/ENTREGA
+    estoque_patterns = [
+        "estoque", "retirar", "retirada", "pedindo", "itens", "já estão", "pendente",
+        "restante", "frame", "conseguir", "disponível", "disponivel", "separar", "romaneio"
+    ]
+    if any(pattern in low_orig for pattern in estoque_patterns):
+        return _ensure_ai_prefix("Vou verificar o status dos itens no estoque e te passo a atualização")
+    
+    # PERGUNTAS TÉCNICAS ESPECÍFICAS
+    technical_patterns = [
+        "watts?", "temperatura", "voltagem", "medida", "dimensão", "tamanho", 
+        "cor?", "modelo", "marca", "especificação", "qual a", "lúmen", "lumens",
+        "potência", "driver", "dimerizável", "rgb", "cct"
+    ]
+    if any(pattern in low_orig for pattern in technical_patterns):
+        return _ensure_ai_prefix("Vou verificar essas informações técnicas e te passo os detalhes")
+
+    # PREÇOS E PRAZOS
+    price_patterns = [
+        "preço", "preco", "valor", "custa", "quanto", "orçamento", "orcamento",
+        "prazo", "entrega", "demora", "tempo", "quando", "desconto", "fornecedor"
+    ]
+    if any(pattern in low_orig for pattern in price_patterns):
+        return _ensure_ai_prefix("Vou consultar valores e prazos atualizados e te retorno")
+
+    # MÍDIA/ARQUIVOS
+    if any(word in low_orig for word in ["vídeo", "video", "imagem", "foto", "anexo", "arquivo", "áudio", "audio"]):
+        return _ensure_ai_prefix("Recebi o arquivo e vou analisar para te responder")
+    
+    # === APENAS APÓS VERIFICAR CONTEÚDO TÉCNICO: VERIFICAR SAUDAÇÕES ===
     try:
         if _safe_is_greeting(original_msg):
-            name = (sender_name or "").strip()
-            gen = _gentle_greeting_reply(original_msg, name if name else None)
-            if gen:
-                if gen:
-                    return _ensure_ai_prefix(gen)
+            # Só responder com saudação se for REALMENTE apenas uma saudação
+            all_technical_patterns = projeto_patterns + estoque_patterns + technical_patterns + price_patterns
+            if len(original_msg.strip()) <= 30 and not any(p in low_orig for p in all_technical_patterns):
+                return _ensure_ai_prefix(_gentle_greeting_reply(original_msg, sender_name))
     except Exception:
         pass
-    low_orig = (original_msg or "").lower()
-    if "vídeo" in low_orig or "video" in low_orig or "anexo" in low_orig:
-        return _ensure_ai_prefix("Já te retorno com as observações em breve")
-    needs_check = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]
-    for k in needs_check:
-        if k in low_orig:
-            return _ensure_ai_prefix(
-                "Vou verificar com a equipe e retorno com a atualização sobre os itens"
-            )
-    first = (sender_name or "").split()[0] if sender_name else ""
-    if first:
-        return _ensure_ai_prefix(f"Oi {first}! Tudo ótimo, e você? Posso ajudar com algo agora?")
-    return _ensure_ai_prefix("Oi! Tudo ótimo, e você? Posso ajudar com algo agora?")
+    
+    # Fallback para outros casos
+    return _ensure_ai_prefix("Vou verificar e te retorno com as informações")
 
 # =====================================================================
 # SUPABASE CLIENT
@@ -742,8 +949,15 @@ def _is_greeting_only(txt: str) -> bool:
 def _needs_clarify(txt: str) -> Optional[str]:
     if not isinstance(txt, str) or not txt.strip():
         return "__ignore_greeting__"
-    if _is_greeting_only(txt):
-        return "__ignore_greeting__"
+    
+    # Se for saudação + conteúdo, NÃO ignore - processe o conteúdo
+    txt_clean = txt.strip()
+    is_just_greeting = _is_greeting_only(txt_clean)
+    
+    # Saudação pura: retorna especial para ser tratada apropriadamente
+    if is_just_greeting:
+        return "__pure_greeting__"  # Nova flag para saudações puras
+    
     if _is_gibberish(txt):
         return "Não consegui entender bem. Pode explicar em uma frase o que você precisa?"
 
@@ -1530,26 +1744,51 @@ def _teams_format_text(row: dict) -> str:
     nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
     tel  = (row.get("telefone") or "—")
     meta = (row.get("mensagem") or {}).get("meta") or {}
+    original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
 
-    # preferir o preview do debounce, se presente
-    preview = meta.get("debounce_batch_preview")
-    batch_s = meta.get("debounce_batch_seconds")
-    batch_n = meta.get("debounce_batch_count")
-
-    if preview:
-        header = []
-        if batch_s: header.append(f"{batch_s}s")
-        if batch_n: header.append(f"{batch_n} msgs")
-        prefix = f"({', '.join(header)}) " if header else ""
-        msg = f"{prefix}{preview}"
-    else:
-        msg = ((row.get("mensagem") or {}).get("text") or "").strip()
-
-    # Adiciona transcrição de áudio, se existir
+    # Análise de mídia para exibição no Teams
+    audio_interpretation = meta.get("audio_interpretation")
     audio_transcript = meta.get("audio_transcript")
-    transcript_block = f"\n🎧 **Transcrição:** {audio_transcript}" if audio_transcript else ""
+    image_interpretation = meta.get("image_interpretation")
+    video_transcript = meta.get("video_transcript")
+    document_analysis = meta.get("document_analysis")
 
-    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n🛎️ **Mensagem:** {msg}{transcript_block}"
+    # Construir bloco de conteúdo
+    content_blocks = []
+    
+    # Prioridade: documento > áudio > imagem > vídeo
+    if document_analysis:
+        content_blocks.append(f"📄 **Documento:** {document_analysis}")
+    elif audio_interpretation:
+        content_blocks.append(f"🎤 **Áudio:** {audio_interpretation}")
+        if audio_transcript:
+            content_blocks.append(f"📝 **Transcrição:** {audio_transcript}")
+    elif image_interpretation:
+        content_blocks.append(f"🖼️ **Imagem:** {image_interpretation}")
+    elif video_transcript:
+        content_blocks.append(f"🎥 **Vídeo:** {video_transcript}")
+    
+    # Adicionar texto se houver e não for apenas placeholder de mídia
+    if original_msg and not original_msg.startswith('[') and not original_msg.endswith(']'):
+        content_blocks.append(f"💬 **Mensagem:** {original_msg}")
+    
+    # Se não há conteúdo específico, usar debounce ou fallback
+    if not content_blocks:
+        preview = meta.get("debounce_batch_preview")
+        batch_s = meta.get("debounce_batch_seconds")
+        batch_n = meta.get("debounce_batch_count")
+
+        if preview:
+            header = []
+            if batch_s: header.append(f"{batch_s}s")
+            if batch_n: header.append(f"{batch_n} msgs")
+            prefix = f"({', '.join(header)}) " if header else ""
+            content_blocks.append(f"🛎️ **Mensagem:** {prefix}{preview}")
+        else:
+            content_blocks.append(f"🛎️ **Mensagem:** {original_msg or '(sem conteúdo visível)'}")
+    
+    conteudo = "\n".join(content_blocks)
+    return f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n{conteudo}"
 
 
 def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | None = None) -> None:
@@ -1581,7 +1820,32 @@ def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | N
         extra = "\n\n📣 **Interno:** acionar Vinícius (assunto administrativo/financeiro)."
     elif route == "log":
         extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
-    text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+    
+    # Para áudios e mídias com transcrição, mostrar apenas a resposta sugerida para evitar confusão
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+    
+    if has_audio_transcript:
+        # Para áudios, mostrar apenas dados básicos + resposta sugerida
+        nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+        tel = (row.get("telefone") or "—")
+        text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n🎤 **Áudio recebido**\n\n🤖 **Sugerida:** {suggested}{extra}"
+    else:
+        # Para mensagens normais, usar formato completo
+        text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+        
+    # Para áudios e mídias com transcrição, mostrar apenas a resposta sugerida para evitar confusão
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+    
+    if has_audio_transcript:
+        # Para áudios, mostrar apenas dados básicos + resposta sugerida
+        nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+        tel = (row.get("telefone") or "—")
+        text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n🎤 **Áudio recebido**\n\n🤖 **Sugerida:** {suggested}{extra}"
+    else:
+        # Para mensagens normais, usar formato completo
+        text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
     _teams_post_card(
         title="✅ Aprovação necessária — Lucenera",
         text=text,
@@ -1650,7 +1914,18 @@ def _teams_notify(row: dict, suggested: str, route: str | None, channel: str | N
     elif route == "log":
         extra = "\n\n📣 **Interno:** acionar Matheus (estoque/entrega/logística)."
 
-    text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
+    # Para áudios e mídias com transcrição, mostrar apenas a resposta sugerida para evitar confusão
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+    
+    if has_audio_transcript:
+        # Para áudios, mostrar apenas dados básicos + resposta sugerida
+        nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+        tel = (row.get("telefone") or "—")
+        text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n🎤 **Áudio recebido**\n\n🤖 **Sugerida:** {suggested}{extra}"
+    else:
+        # Para mensagens normais, usar formato completo
+        text = _teams_format_text(row) + f"\n\n🤖 **Sugerida:** {suggested}{extra}"
 
     _teams_post_card(
         title="✅ Aprovação necessária — Lucenera",
@@ -1687,7 +1962,19 @@ def _teams_notify_log(row: dict, title: str, status_tag: str, note: str | None =
     admin = f"{base}/admin?q={search_q}"
     suggest = f"{base}/admin?q={search_q}&compose=1"
 
-    text = _teams_format_text(row) + f"\n\n🪪 **Status:** {status_tag}"
+    # Para áudios e mídias com transcrição, mostrar apenas dados básicos para evitar confusão
+    meta = (row.get("mensagem") or {}).get("meta") or {}
+    has_audio_transcript = bool(meta.get("audio_interpretation") or meta.get("audio_transcript"))
+    
+    if has_audio_transcript:
+        # Para áudios, mostrar apenas dados básicos
+        nome = ((row.get("nome") or {}).get("display") or row.get("sender_name") or "—").strip()
+        tel = (row.get("telefone") or "—")
+        text = f"👤 **Nome:** {nome}\n📞 **Telefone:** {tel}\n\n🎤 **Áudio recebido**\n\n🪪 **Status:** {status_tag}"
+    else:
+        # Para mensagens normais, usar formato completo
+        text = _teams_format_text(row) + f"\n\n🪪 **Status:** {status_tag}"
+    
     if note:
         text += f"\n\n📝 {note}"
 
@@ -1914,8 +2201,10 @@ def processar_inline(row: dict) -> None:
         try:
             return is_greeting(texto)
         except NameError:
-            t = (texto or "").strip().lower()
-            return t in {"oi","olá","ola","e ai","eai","tudo bem","td bem","bom dia","boa tarde","boa noite"}
+            # Fallback usando GREETINGS_RE se is_greeting não estiver disponível
+            if not isinstance(texto, str):
+                return False
+            return bool(GREETINGS_RE.match(texto.strip()))
 
     def _safe_is_followup(texto: str) -> bool:
         try:
@@ -2044,9 +2333,12 @@ def processar_inline(row: dict) -> None:
 
         # Texto + enrich de mídia
         txt = mensagem_dict.get("text") or ""
+        media_analysis = None
         try:
+            print(f">> [MEDIA] Tentando enrich para row_id={row_id}, txt_inicial='{txt[:100]}'", flush=True)
             enriched = enrich_row_with_media_text(row)
-            if enriched.get("changed"):
+            if enriched and enriched.get("changed"):
+                print(f">> [MEDIA] Enrich bem-sucedido, changed=True", flush=True)
                 row = enriched["row"]
                 if _column_exists("mensagem"):
                     _supabase_update_safe(row_id, {"mensagem": row.get("mensagem")})
@@ -2058,9 +2350,29 @@ def processar_inline(row: dict) -> None:
                 if not isinstance(meta, dict):
                     meta = {}
                     mensagem_dict["meta"] = meta
-                txt = mensagem_dict.get("text") or txt
+                txt_novo = mensagem_dict.get("text") or txt
+                print(f">> [MEDIA] Texto após enrich: '{txt_novo[:200]}'", flush=True)
+                
+                # Extrair análise de mídia para o Teams
+                if isinstance(meta, dict):
+                    media_analysis = {
+                        'audio_interpretation': meta.get('audio_interpretation'),
+                        'image_interpretation': meta.get('image_interpretation'), 
+                        'video_transcript': meta.get('video_transcript'),
+                        'document_analysis': meta.get('document_analysis')
+                    }
+                    # Filtra apenas análises que existem
+                    media_analysis = {k: v for k, v in media_analysis.items() if v}
+                    if media_analysis:
+                        print(f">> [MEDIA] Análise extraída: {list(media_analysis.keys())}", flush=True)
+                
+                txt = txt_novo
+            else:
+                print(f">> [MEDIA] Enrich retornou changed=False ou None", flush=True)
         except Exception as _e_media:
-            print(">> aviso: enrich_row_with_media_text falhou:", _e_media, flush=True)
+            print(f">> [ERRO] enrich_row_with_media_text falhou para row_id={row_id}:", _e_media, flush=True)
+            import traceback
+            print(f">> [ERRO] Traceback: {traceback.format_exc()}", flush=True)
 
         audit_preview = (txt[:80] if txt else "").replace("\n", " ")
         APP_LOG.info(
@@ -2234,8 +2546,70 @@ def processar_inline(row: dict) -> None:
 
         # Clarify
         clarify = _needs_clarify(txt)
-        needs_clarify = bool(clarify and clarify != "__ignore_greeting__")
+        is_pure_greeting = (clarify == "__pure_greeting__")
+        needs_clarify = bool(clarify and clarify not in {"__ignore_greeting__", "__pure_greeting__"})
         clarify_hint = clarify if needs_clarify else None
+
+        # TRATAMENTO ESPECIAL: Saudação pura (sem conteúdo adicional)
+        if is_pure_greeting:
+            sender_name = str(row.get("sender_name") or (row.get("nome") or {}).get("display", "") or "").strip()
+            greeting_response = _gentle_greeting_reply(txt, sender_name)
+            
+            if APPROVAL_MODE:
+                _supabase_update_safe(row_id, {
+                    "ai_draft": greeting_response,
+                    "status": "awaiting_approval",
+                    "used_ai": True,
+                    "error": None,
+                    "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                })
+                try:
+                    _teams_notify(row, greeting_response, None)
+                except Exception as e:
+                    print(">> [WARN] falha ao enviar card de aprovação para saudação:", e, flush=True)
+            else:
+                sent_ok = False
+                if OUTGOING_ENABLED:
+                    try:
+                        sent_ok = bool(send_text_from_row(row, greeting_response))
+                    except Exception as e_send:
+                        print(">> aviso: falha ao enviar WhatsApp (saudação):", e_send, flush=True)
+                
+                if sent_ok:
+                    _supabase_update_safe(row_id, {
+                        "final_out": greeting_response,
+                        "status": "sent",
+                        "used_ai": True,
+                        "approved": True,
+                        "error": None,
+                        "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                    })
+                    _teams_notify_log(row, title="👋 Saudação enviada (auto) — log", status_tag="sent")
+                    try:
+                        if supabase:
+                            supabase.table("mensagens").insert({
+                                "telefone": telefone,
+                                "group_id": None,
+                                "mensagem": {"text": greeting_response, "meta": {"type": "outgoing", "status": "SENT"}},
+                                "fromMe": True, "from_me": True, "direction": "out", "status": "SENT", "origem": "bot"
+                            }).execute()
+                    except Exception as e:
+                        print(">> aviso: falha ao registrar fala do bot (saudação):", e, flush=True)
+                else:
+                    _supabase_update_safe(row_id, {
+                        "ai_draft": greeting_response,
+                        "status": ("sent_dry_run" if not OUTGOING_ENABLED else "error"),
+                        "used_ai": True,
+                        "approved": False,
+                        "error": (None if not OUTGOING_ENABLED else "Falha no envio WhatsApp"),
+                        "analysis": {"generator": "greeting_handler", "pure_greeting": True},
+                    })
+                    _teams_notify_log(
+                        row,
+                        title=("🧪 DRY RUN (saudação) — log" if not OUTGOING_ENABLED else "⚠️ Erro de envio (saudação) — log"),
+                        status_tag=("sent_dry_run" if not OUTGOING_ENABLED else "error")
+                    )
+            return
 
         # Horário comercial
         OOH_STRATEGY = (os.getenv("OOH_STRATEGY", "reply") or "reply").lower()
@@ -2319,14 +2693,18 @@ def processar_inline(row: dict) -> None:
 
             lock = _RUN_LOCKS[chat_key]
             with lock:
+                print(f">> [CHATGPT] Gerando resposta para row_id={row_id}, texto_len={len(txt)}", flush=True)
                 resposta = gerar_resposta_com_chatgpt(
                     txt,
                     user_identifier,
                     mensagem_id=row_id,
                     telefone=telefone,
                 )
+                print(f">> [CHATGPT] Resposta recebida: len={len(resposta or '')}, preview='{(resposta or '')[:100]}'", flush=True)
         except Exception as exc:
-            print(">> erro: gerar_resposta_com_chatgpt falhou:", exc, flush=True)
+            print(f">> [ERRO] gerar_resposta_com_chatgpt falhou para row_id={row_id}:", exc, flush=True)
+            import traceback
+            print(f">> [ERRO] Traceback: {traceback.format_exc()}", flush=True)
             _supabase_update_safe(row_id, {
                 "status": "error",
                 "used_ai": False,
@@ -2337,19 +2715,48 @@ def processar_inline(row: dict) -> None:
             return
 
         if not resposta or not resposta.strip():
-            APP_LOG.warning(
-                "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s",
-                row_id,
-                telefone or "-",
-            )
-            _supabase_update_safe(row_id, {
-                "status": "ignored_empty_ai",
-                "used_ai": False,
-                "ai_draft": None,
-                "error": "ChatGPT retornou vazio"
-            })
-            _teams_notify_log(row, title="🧹 Resposta vazia — log", status_tag="ignored_empty_ai")
-            return
+            print(f">> [PROBLEMA] ChatGPT retornou vazio! row_id={row_id}, texto_input='{txt[:200]}'", flush=True)
+            
+            # FALLBACK: tentar resposta genérica baseada no conteúdo
+            fallback_response = None
+            if media_analysis:
+                # Se há análise de mídia, gerar resposta baseada nisso
+                if 'document_analysis' in media_analysis:
+                    fallback_response = "Recebi o documento. Vou analisar e te retorno com as informações solicitadas."
+                elif 'image_interpretation' in media_analysis:
+                    fallback_response = "Recebi a imagem. Vou verificar e te respondo em seguida."
+                elif 'audio_interpretation' in media_analysis:
+                    fallback_response = "Recebi o áudio. Vou processar e te retorno."
+            elif txt and len(txt.strip()) > 10:
+                # Detectar se é questão financeira/comercial
+                if _is_financial_question(txt):
+                    fallback_response = "Vou consultar valores e condições com o financeiro e te retorno com as informações."
+                else:
+                    # Resposta genérica para texto substantivo
+                    fallback_response = "Recebi sua mensagem. Vou verificar com a equipe e te retorno em seguida."
+            
+            if fallback_response:
+                print(f">> [FALLBACK] Usando resposta fallback: '{fallback_response}'", flush=True)
+                resposta = fallback_response
+                # IMPORTANTE: Aplicar humanização também nos fallbacks
+                sender_name = _safe_extract_sender_name(row)
+                original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+                resposta = _humanize_robotic_response(resposta, sender_name, original_msg)
+            else:
+                APP_LOG.warning(
+                    "INLINE_AUDIT_EMPTY_RESPONSE id=%s tel=%s texto='%s'",
+                    row_id,
+                    telefone or "-",
+                    txt[:100]
+                )
+                _supabase_update_safe(row_id, {
+                    "status": "ignored_empty_ai",
+                    "used_ai": False,
+                    "ai_draft": None,
+                    "error": f"ChatGPT retornou vazio para texto: '{txt[:100]}'"
+                })
+                _teams_notify_log(row, title="🧹 Resposta vazia — log", status_tag="ignored_empty_ai")
+                return
 
         analysis_obj = {
             "chat_key": chat_key,
@@ -2368,6 +2775,11 @@ def processar_inline(row: dict) -> None:
                 rc, ms = (None, None)
 
             ai_for_client = rc.strip() if isinstance(rc, str) and rc.strip() else resposta
+
+            # Aplicar humanização para evitar respostas robóticas
+            sender_name = _safe_extract_sender_name(row)
+            original_msg = ((row.get("mensagem") or {}).get("text") or "").strip()
+            ai_for_client = _humanize_robotic_response(ai_for_client, sender_name, original_msg)
 
             _supabase_update_safe(row_id, {
                 "ai_draft": ai_for_client, "status": "awaiting_approval", "used_ai": True,
@@ -2720,234 +3132,8 @@ def teams_reject():
     _supabase_update_safe(_cast_key_for_query(rid), {"approved": False, "status": "rejected"})
     return redirect(url_for("admin"))
 # =========================
-# TEAMS - Sugerir resposta manual
+# TEAMS - routes handled by blueprint routes/teams_suggest.py
 # =========================
-@app.get("/teams/suggest")
-def teams_suggest():
-    from flask import render_template_string, request
-    msg_id = request.args.get("id")
-    token = request.args.get("token")
-    # Debug: log incoming args for diagnosis
-    try:
-        incoming_args = dict(request.args)
-    except Exception:
-        incoming_args = {}
-    print(f">> /teams/suggest (GET) called args={incoming_args}", flush=True)
-    if token != (TEAMS_ACTION_TOKEN or ""):
-        print(f">> /teams/suggest (GET): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-        return "Token inválido", 403
-
-    # Página simples de sugestão
-    html = f"""
-    <html>
-    <head>
-        <meta charset='utf-8'>
-        <title>Sugerir resposta - Lucenera</title>
-        <style>
-            body {{
-                font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-                margin: 40px;
-                color: #333;
-            }}
-            textarea {{
-                width: 100%;
-                height: 140px;
-                font-size: 15px;
-                padding: 8px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                resize: vertical;
-            }}
-            button {{
-                background: #2563eb;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                cursor: pointer;
-                margin-top: 10px;
-            }}
-            button:hover {{ background: #1d4ed8; }}
-        </style>
-    </head>
-    <body>
-        <h2>💬 Sugerir resposta manual</h2>
-        <form method="post" action="/teams/suggest">
-            <input type="hidden" name="id" value="{msg_id}">
-            <input type="hidden" name="token" value="{token}">
-            <textarea name="texto" placeholder="Escreva aqui a resposta sugerida..."></textarea><br>
-            <button type="submit">Enviar sugestão</button>
-        </form>
-    </body>
-    </html>
-    """
-    return render_template_string(html)
-
-
-@app.post("/teams/suggest")
-def teams_suggest_submit():
-    from flask import request
-    msg_id = request.form.get("id")
-    token = request.form.get("token")
-    texto = request.form.get("texto") or ""
-    # Debug: log form args and token status for diagnosis
-    try:
-        form_args = dict(request.form)
-    except Exception:
-        form_args = {}
-    print(f">> /teams/suggest (POST) called form={form_args}", flush=True)
-    if token != (TEAMS_ACTION_TOKEN or ""):
-        print(f">> /teams/suggest (POST): token mismatch incoming={token!r} expected={(TEAMS_ACTION_TOKEN or '')!r}", flush=True)
-        return "Token inválido", 403
-    if not texto.strip():
-        return "Mensagem vazia", 400
-
-    rid = _cast_key_for_query(msg_id)
-
-    # Marca sugestão no Supabase primeiro
-    _supabase_update_safe(rid, {
-        "manual_reply": texto,
-        "status": "suggested",
-        "approved": False,
-        "approved_by": "Teams",
-        "origem": "human"
-    })
-
-    # Tenta buscar a linha para enviar (se OUTGOING_ENABLED)
-    row = None
-    try:
-        if supabase:
-            row = supabase.table(TABLE).select("*").eq(ID_COLUMN, rid).single().execute().data
-    except Exception as e:
-        print(f">> aviso: falha ao buscar row para envio (suggest): {e}", flush=True)
-
-    telefone_feedback = None
-    if row:
-        try:
-            from services.feedback_respostas import salvar_feedback_resposta  # type: ignore
-            from services.chatgpt_responder import _detect_action_label  # type: ignore
-        except Exception as import_err:
-            print(f">> aviso: imports feedback_respostas indisponíveis: {import_err}", flush=True)
-        else:
-            mensagem_cliente = ""
-            contexto_extra = None
-            try:
-                mensagem = row.get("mensagem") or {}
-                if isinstance(mensagem, dict):
-                    texto_base = mensagem.get("text") or mensagem.get("mensagem") or mensagem.get("body")
-                    if isinstance(texto_base, str) and texto_base.strip():
-                        mensagem_cliente = texto_base.strip()
-                    meta = mensagem.get("meta") or {}
-                    if isinstance(meta, dict):
-                        contexto_extra = meta.get("debounce_unified_text") or meta.get("debounce_batch_preview")
-                        if not contexto_extra:
-                            linhas = meta.get("debounce_batch_lines")
-                            if isinstance(linhas, (list, tuple)):
-                                partes = [item.strip() for item in linhas if isinstance(item, str) and item.strip()]
-                                if partes:
-                                    contexto_extra = "\n".join(partes)
-                if not contexto_extra and isinstance(row.get("contexto"), str):
-                    contexto_extra = row.get("contexto").strip() or None
-                texto_alt = row.get("content") or row.get("texto") or row.get("mensagem_texto")
-                if not mensagem_cliente and isinstance(texto_alt, str) and texto_alt.strip():
-                    mensagem_cliente = texto_alt.strip()
-            except Exception as parse_err:
-                print(f">> aviso: não foi possível extrair mensagem do cliente: {parse_err}", flush=True)
-            resposta_original = ""
-            try:
-                candidatos = [
-                    row.get("ai_draft"),
-                    row.get("resposta"),
-                    row.get("final_out"),
-                    row.get("resposta_bot_original"),
-                ]
-                for candidato in candidatos:
-                    if isinstance(candidato, str) and candidato.strip():
-                        resposta_original = candidato.strip()
-                        break
-            except Exception:
-                resposta_original = ""
-
-            categoria_feedback = row.get("categoria") if isinstance(row.get("categoria"), str) else None
-            intencao_feedback = None
-            try:
-                if mensagem_cliente:
-                    intencao_feedback = _detect_action_label(mensagem_cliente)
-            except Exception as detect_err:
-                print(f">> aviso: falha ao detectar intenção para feedback: {detect_err}", flush=True)
-
-            telefone_feedback = row.get("telefone") if isinstance(row.get("telefone"), str) else None
-            try:
-                salvar_feedback_resposta(
-                    mensagem_cliente=mensagem_cliente,
-                    resposta_bot_original=resposta_original,
-                    resposta_humana_correta=texto,
-                    telefone=telefone_feedback,
-                    origem="teams_suggest",
-                    categoria=categoria_feedback,
-                    intencao=intencao_feedback,
-                    contexto=contexto_extra,
-                )
-                print(
-                    f">> feedback_respostas registrado (telefone={telefone_feedback} intencao={intencao_feedback} categoria={categoria_feedback})",
-                    flush=True,
-                )
-            except ValueError as val_err:
-                print(f">> aviso: feedback_respostas não salvo: {val_err}", flush=True)
-            except Exception as feedback_err:
-                print(f">> aviso: falha ao salvar feedback_respostas: {feedback_err}", flush=True)
-
-    telefone_destino = telefone_feedback if telefone_feedback else (row.get("telefone") if isinstance(row, dict) and isinstance(row.get("telefone"), str) else None)
-    envio_ok = False
-    envio_tentado = False
-
-    if telefone_destino:
-        envio_tentado = True
-        if OUTGOING_ENABLED:
-            print(f">> /teams/suggest (POST): enviando automaticamente telefone={telefone_destino} id={rid}", flush=True)
-            try:
-                envio_ok = bool(zapi_client.enviar_mensagem_wa(telefone=telefone_destino, mensagem=texto))
-            except Exception as envio_err:
-                print(f">> Falha ao enviar sugestão via enviar_mensagem_wa: {envio_err}", flush=True)
-        else:
-            print("[DRY RUN] OUTGOING_ENABLED=0 — sugestão não enviada (modo simulação).", flush=True)
-    else:
-        print(">> Sugestão sem telefone — envio automático ignorado.", flush=True)
-
-    status_final = "sent" if envio_ok or (envio_tentado and not OUTGOING_ENABLED) else "error"
-    erro_final = None
-    if not telefone_destino:
-        erro_final = "Telefone ausente para envio da sugestão"
-    elif OUTGOING_ENABLED and not envio_ok:
-        erro_final = "Falha no envio WhatsApp"
-
-    _supabase_update_safe(rid, {
-        "final_out": texto,
-        "manual_reply": texto,
-        "approved": status_final == "sent",
-        "approved_by": "Teams",
-        "status": status_final,
-        "fromMe": True,
-        "origem": "human",
-        "used_ai": False,
-        "error": erro_final
-    })
-
-    if envio_ok or (envio_tentado and not OUTGOING_ENABLED):
-        try:
-            supabase.table("mensagens").insert({
-                "telefone": telefone_destino,
-                "group_id": row.get("group_id") if row else None,
-                "mensagem": {"text": texto, "meta": {"type": "outgoing_manual", "status": "SENT"}},
-                "fromMe": True,
-                "status": "SENT",
-                "origem": "human"
-            }).execute()
-        except Exception as e:
-            print(">> aviso: falha ao registrar sugestão no histórico:", e, flush=True)
-
-    print(f">> Sugestão registrada via Teams (id={rid}) sent={envio_ok}")
-    return "<h3>✅ Sugestão registrada com sucesso!</h3><p>Você pode fechar esta janela.</p>"
 
 @app.get("/favicon.ico")
 def favicon(): return "", 204
@@ -3161,7 +3347,7 @@ def suprimir_logs_ping():
 # MAIN
 # =====================================================================
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", str(PORT)))
+    port = int(os.getenv("PORT", "5000"))
 
     if NGROK_KILL_ON_START:
         print(">> NGROK_KILL_ON_START=1 — finalizando ngrok(s) antigos...", flush=True)

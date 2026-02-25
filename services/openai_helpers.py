@@ -57,13 +57,18 @@ OPENAI_BASE_URL = _clean_env("OPENAI_BASE_URL")  # opcional
 # -------------------------------------------------------------------
 # Cliente e Modelo
 # -------------------------------------------------------------------
-_client_kwargs: Dict[str, Any] = {"api_key": OPENAI_API_KEY}
+_client_kwargs: Dict[str, Any] = {"api_key": OPENAI_API_KEY, "timeout": 5}  # Add timeout
 if OPENAI_ORG:
     _client_kwargs["organization"] = OPENAI_ORG
 if OPENAI_BASE_URL:
     _client_kwargs["base_url"] = OPENAI_BASE_URL
 
-cliente = OpenAI(**_client_kwargs)
+try:
+    cliente = OpenAI(**_client_kwargs)
+except Exception as e:
+    print(f">> AVISO: Erro ao criar cliente OpenAI: {e}", flush=True)
+    cliente = None
+
 modelo = OPENAI_MODEL
 
 # -------------------------------------------------------------------
@@ -261,66 +266,17 @@ def _transcribe_bytes(data: bytes, filename: str = "audio.webm") -> Optional[str
     except Exception:
         return None
 
-def _image_caption(url: str) -> Optional[str]:
-    """
-    Gera uma descrição objetiva (1–2 frases) para imagem usando GPT-4o-mini com visão.
-    """
-    # Prefer using the project's vision helper which accepts a local file path.
-    try:
-        from vision_lucenera import analisar_imagem
-    except Exception:
-        analisar_imagem = None
-
-    # 1) If we have the project's vision helper, try download -> local file -> analyze
-    if analisar_imagem:
-        try:
-            import tempfile
-            # download image bytes
-            resp = requests.get(url, timeout=15)
-            if resp.status_code == 200:
-                # guess extension from Content-Type or url
-                ctype = resp.headers.get('Content-Type', '')
-                ext = mimetypes.guess_extension(ctype.split(';')[0].strip() or '') or Path(url).suffix or '.jpg'
-                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tf:
-                    tf.write(resp.content)
-                    tmp_path = tf.name
-                try:
-                    cap = analisar_imagem(tmp_path)
-                    return (cap or '').strip() or None
-                finally:
-                    try:
-                        Path(tmp_path).unlink()
-                    except Exception:
-                        pass
-        except Exception:
-            # fall through to best-effort cloud call below
-            pass
-
-    # 2) Fallback: ask the model directly with the URL (legacy behaviour)
-    try:
-        from openai.types.chat import ChatCompletionUserMessageParam
-        prompt = (
-            "Descreva objetivamente a imagem (1–2 frases úteis para atendimento técnico/comercial no WhatsApp)."
-            f"\nURL: {url}"
-        )
-        msgs: list[ChatCompletionUserMessageParam] = [{"role": "user", "content": prompt}]
-        out = cliente.chat.completions.create(model=VISION_MODEL, messages=msgs, temperature=0.2)
-        cap = (out.choices or [])[0].message.content
-        return (cap or "").strip() or None
-    except Exception:
-        return None
-
 def _detect_media_urls_from_row(row: dict) -> Dict[str, Optional[str]]:
     """
-    Tenta achar URLs de áudio/imagem/vídeo em:
-      - row['mensagem']['raw'] (padrões Z-API: audio.audioUrl, image.imageUrl/thumbnailUrl, video.videoUrl)
-      - texto padronizado com colchetes: "[Áudio recebido: URL]", "[Imagem recebida: URL]", "[Vídeo recebido: URL]"
+    Tenta achar URLs de áudio/imagem/vídeo/documento em:
+      - row['mensagem']['raw'] (padrões Z-API: audio.audioUrl, image.imageUrl/thumbnailUrl, video.videoUrl, document.documentUrl)
+      - texto padronizado com colchetes: "[Áudio recebido: URL]", "[Imagem recebida: URL]", "[Vídeo recebido: URL]", "[Documento recebido: URL]"
     """
     msg = (row.get("mensagem") or {})
     raw = msg.get("raw") or {}
     text = (msg.get("text") or "").strip()
 
-    audio_url = image_url = video_url = None
+    audio_url = image_url = video_url = document_url = None
 
     if isinstance(raw, dict):
         aud = raw.get("audio")
@@ -332,6 +288,9 @@ def _detect_media_urls_from_row(row: dict) -> Dict[str, Optional[str]]:
         vid = raw.get("video")
         if isinstance(vid, dict):
             video_url = vid.get("videoUrl") or video_url
+        doc = raw.get("document")
+        if isinstance(doc, dict):
+            document_url = doc.get("documentUrl") or doc.get("url") or document_url
 
     if not audio_url and text.startswith("[Áudio recebido:"):
         audio_url = _get_url_from_bracket_text(text)
@@ -339,19 +298,45 @@ def _detect_media_urls_from_row(row: dict) -> Dict[str, Optional[str]]:
         image_url = _get_url_from_bracket_text(text)
     if not video_url and text.startswith("[Vídeo recebido:"):
         video_url = _get_url_from_bracket_text(text)
+    if not document_url and text.startswith("[Documento recebido:"):
+        document_url = _get_url_from_bracket_text(text)
 
-    return {"audio": audio_url, "image": image_url, "video": video_url}
+    return {"audio": audio_url, "image": image_url, "video": video_url, "document": document_url}
+
+
+def _send_teams_media_alert(row: dict, alert: dict) -> None:
+    """
+    Envia alerta no Teams sobre mídia que necessita intervenção humana.
+    """
+    try:
+        from notificacoes.teams_alerta import enviar_falha_para_teams
+        
+        telefone = row.get("telefone", "desconhecido")
+        media_type = alert.get("type", "mídia")
+        media_url = alert.get("url", "URL não disponível")
+        
+        # Capitaliza primeira letra do tipo para exibição
+        media_display = media_type.capitalize()
+        
+        enviar_falha_para_teams(
+            telefone=telefone,
+            mensagem=f"{media_display} recebida - necessária intervenção humana",
+            erro=f"Nova {media_type} enviada pelo cliente",
+            mensagem_id=row.get("id"),
+            dica=f"Acesse o WhatsApp para visualizar a {media_type} e responder adequadamente. URL: {media_url}"
+        )
+    except Exception:
+        pass  # Falha silenciosa para não quebrar o fluxo principal
 
 def enrich_row_with_media_text(row: dict) -> Dict[str, Any]:
     """
     Se houver mídia:
-      - ÁUDIO/VÍDEO: transcreve e substitui row['mensagem']['text'] pela transcrição.
-      - IMAGEM: gera descrição curta e substitui row['mensagem']['text'] por "[Imagem] ...".
-    Também marca 'media_processed' e anexa metadados úteis em row['mensagem']['meta']:
-      - audio_url, audio_transcript
-      - image_url, image_caption
-      - video_url, video_transcript
-
+      - ÁUDIO: transcreve e substitui row['mensagem']['text'] pela transcrição.
+      - IMAGEM: resposta padronizada "Verifique a Imagem no whatsApp para responder"
+      - VÍDEO: resposta padronizada "Verifique o Vídeo no whatsApp para responder"
+      - DOCUMENTO: resposta padronizada "Verifique o Documento no whatsApp para responder"
+    
+    Também envia alertas Teams para mídia visual que precisa de intervenção humana.
     Retorna {"row": <row>, "changed": bool}.
     """
     msg = (row.get("mensagem") or {})
@@ -362,12 +347,13 @@ def enrich_row_with_media_text(row: dict) -> Dict[str, Any]:
         return {"row": row, "changed": False}
 
     media = _detect_media_urls_from_row(row)
-    audio_url, image_url, video_url = media["audio"], media["image"], media["video"]
+    audio_url, image_url, video_url, document_url = media["audio"], media["image"], media["video"], media.get("document")
 
     new_text = None
     meta_changes: Dict[str, Any] = {}
+    teams_alert = None
 
-    # ÁUDIO
+    # ÁUDIO - mantém transcrição
     if audio_url and not new_text:
         data = _download(audio_url)
         if data:
@@ -400,50 +386,44 @@ def enrich_row_with_media_text(row: dict) -> Dict[str, Any]:
                 msg_id = row.get("id") or (row.get("mensagem") or {}).get("id")
                 logger.info(f"[AUDIO_TRANSCRITO] telefone={telefone} id={msg_id} transcricao={tr} interpretacao={short_interpret}")
 
-    # IMAGEM
+    # IMAGEM - resposta padronizada + alerta Teams
     if image_url and not new_text:
-        try:
-            cap = _image_caption(image_url)
-            short_interpret = None
-            if cap:
-                # Gera interpretação curta para imagem
-                try:
-                    from openai.types.chat import ChatCompletionUserMessageParam
-                    prompt = (
-                        "Resuma em 1 frase clara e objetiva o conteúdo da imagem recebida, para que um atendente saiba do que se trata sem ver a imagem. Seja específico, não genérico."
-                        f"\nDescrição da imagem: {cap}"
-                    )
-                    msgs: list[ChatCompletionUserMessageParam] = [{"role": "user", "content": prompt}]
-                    out = cliente.chat.completions.create(model=OPENAI_MODEL, messages=msgs, temperature=0.2)
-                    short_interpret = (out.choices or [])[0].message.content
-                    if short_interpret:
-                        short_interpret = short_interpret.strip()
-                except Exception:
-                    short_interpret = None
-                new_text = f"[Imagem] {cap}"
-                meta_changes.update({"image_url": image_url, "image_caption": cap})
-                if short_interpret:
-                    meta_changes["image_interpretation"] = short_interpret
-            else:
-                # análise falhou — usar fallback amigável e registrar meta indicando falha
-                new_text = "Ocorreu um erro ao processar a imagem. Peça ao cliente para descrever o que deseja na imagem."
-                meta_changes.update({"image_url": image_url, "image_caption_error": True})
-        except Exception as _e_img:
-            new_text = "Ocorreu um erro ao processar a imagem. Peça ao cliente para descrever o que deseja na imagem."
-            try:
-                meta_changes.update({"image_url": image_url, "image_caption_error": str(_e_img)})
-            except Exception:
-                meta_changes.update({"image_url": image_url, "image_caption_error": True})
+        new_text = "Verifique a Imagem no whatsApp para responder"
+        meta_changes.update({"image_url": image_url, "requires_human_review": True})
+        teams_alert = {
+            "type": "image",
+            "message": "Nova imagem recebida - necessária intervenção humana",
+            "url": image_url
+        }
 
-    # VÍDEO
+    # VÍDEO - resposta padronizada + alerta Teams  
     if video_url and not new_text:
-        data = _download(video_url)
-        if data:
-            ext = mimetypes.guess_extension(mimetypes.guess_type(video_url)[0] or "") or ".mp4"
-            tr = _transcribe_bytes(data, filename=f"video{ext}")
-            if tr:
-                new_text = tr
-                meta_changes.update({"video_url": video_url, "video_transcript": tr})
+        new_text = "Verifique o Vídeo no whatsApp para responder"
+        meta_changes.update({"video_url": video_url, "requires_human_review": True})
+        teams_alert = {
+            "type": "video",
+            "message": "Novo vídeo recebido - necessária intervenção humana",
+            "url": video_url
+        }
+
+    # DOCUMENTO - resposta padronizada + alerta Teams
+    if document_url and not new_text:
+        new_text = "Verifique o Documento no whatsApp para responder"
+        meta_changes.update({"document_url": document_url, "requires_human_review": True})
+        teams_alert = {
+            "type": "document",
+            "message": "Novo documento recebido - necessária intervenção humana",
+            "url": document_url
+        }
+
+    # Se há alerta Teams, envia notificação
+    if teams_alert:
+        try:
+            _send_teams_media_alert(row, teams_alert)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("lucenera.teams")
+            logger.warning(f"Falha ao enviar alerta Teams para mídia: {e}")
 
     if not new_text:
         return {"row": row, "changed": False}
@@ -495,9 +475,13 @@ def _apply_manager_policies(msg_cliente: str, ai_texto: str) -> str:
     # Se o modelo não gerou texto útil, podemos retornar uma das respostas
     # padronizadas, mas apenas em casos onde faz sentido confirmar/avisar.
     if not draft:
-        # Se for relacionado a vídeo/mídia -> usar resposta de análise de vídeo
+        # Se for relacionado a imagem/vídeo/documento -> usar respostas padronizadas
+        if "imagem" in mc or "image" in mc:
+            return "Verifique a Imagem no whatsApp para responder"
         if "vídeo" in mc or "video" in mc or "anexo" in mc:
-            return "Já te retorno com as observações em breve"
+            return "Verifique o Vídeo no whatsApp para responder"
+        if "documento" in mc or "doc" in mc or "pdf" in mc:
+            return "Verifique o Documento no whatsApp para responder"
 
         # Palavras que indicam necessidade de checar com equipe/fornecedor
         needs_check_keywords = ["desconto", "fornecedor", "prazo", "disponibilidade", "confirmar", "verificar", "preço", "preco", "orçamento", "orcamento"]

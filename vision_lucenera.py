@@ -1,3 +1,9 @@
+# REMOVIDO: Análise de imagem desabilitada conforme solicitação
+# Este arquivo não é mais usado no fluxo principal
+# O sistema agora usa apenas respostas padronizadas para imagens/vídeos/documentos
+
+# -*- ARQUIVO DESABILITADO -*-
+"""
 # IMPORTS (stdlib → third-party → projeto)
 import os
 from pathlib import Path
@@ -19,19 +25,6 @@ _client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 def analisar_imagem(path: str, prompt: str = "Descreva a imagem com foco em iluminação e ambiente."):
-    """
-    Envia a imagem (como data URL) para o modelo com visão e retorna o texto gerado.
-    """
-    if _client is None:
-        return "Não foi possível analisar a imagem (OPENAI_API_KEY ausente)."
-
-    data_url = imagem_data_url(path)
-
-    # Enviar a instrução + URL como string, evitando estrutura de objetos no 'content'.
-    message_text = f"{prompt}\nURL: {data_url}"
-    resp = _client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=[{"role": "user", "content": message_text}],
-        temperature=0.2,
-    )
-    return (resp.choices[0].message.content or "").strip()
+    # FUNÇÃO DESABILITADA - agora usa resposta padronizada
+    return "Análise de imagem desabilitada. Use resposta padronizada."
+"""

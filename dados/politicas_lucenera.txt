@@ -90,6 +90,15 @@ notificacoes_internas =
 Administrativo (Vinicius) quando pagamento/boleto/nota/baixa/2ª via.
 Estoque/Logística (Matheus) quando entrega/retirada/avaria/falta/rastreio.
 
+[TRATAMENTO_MIDIA]
+politica_geral = Para qualquer mídia (imagem, vídeo, documento), usar APENAS respostas padronizadas. NÃO tentar interpretar ou descrever o conteúdo.
+audio = manter transcrição automática + resposta baseada no texto
+imagem = resposta_padrao: "Verifique a Imagem no whatsApp para responder"
+video = resposta_padrao: "Verifique o Vídeo no whatsApp para responder"
+documento = resposta_padrao: "Verifique o Documento no whatsApp para responder"
+notificacao_teams = para imagem/vídeo/documento, notificar equipe automaticamente sobre necessidade de intervenção humana
+motivo = garantir precisão na resposta e evitar interpretações incorretas de elementos visuais
+
 [HANDOFF_THAIS]
 regras =
 Se mencionar “Thais” ou o tema for técnico/projeto/imagem → resposta curta e informar que vai checar com a Thais.

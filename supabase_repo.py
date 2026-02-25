@@ -24,7 +24,7 @@ def save_inbound_message(
     ai_draft: Optional[str] = None,
     approval_mode: bool = False,
     used_ai: Optional[bool] = None,
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """
     Insere uma linha de mensagem recebida, compatível com o app.py.
     Retorna o registro criado.
@@ -48,7 +48,8 @@ def save_inbound_message(
     if client is None:
         raise RuntimeError("Supabase indisponível para salvar mensagem inbound")
     resp = client.table(TABLE).insert(payload).execute()
-    return (resp.data or [None])[0]
+    first_item = (resp.data or [None])[0] if resp.data else None
+    return first_item if isinstance(first_item, dict) else None
 
 def save_outbound_result(row_id, final_out: str, sent: bool, *, error: Optional[str] = None, approval_mode: bool = False):
     """
@@ -68,7 +69,8 @@ def save_outbound_result(row_id, final_out: str, sent: bool, *, error: Optional[
             })
             .eq("id", row_id)
             .execute())
-    return (resp.data or [None])[0]
+    first_item = (resp.data or [None])[0] if resp.data else None
+    return first_item if isinstance(first_item, dict) else None
 
 def get_history_direct(telefone: str, days: int = 14, limit: int = 200) -> List[Dict[str, Any]]:
     """
@@ -91,6 +93,8 @@ def get_history_direct(telefone: str, days: int = 14, limit: int = 200) -> List[
     items: List[Dict[str, Any]] = []
     # Ordenamos da mais antiga para a mais nova para construir a conversa na ordem certa
     for r in reversed(rows):
+        if not isinstance(r, dict):
+            continue
         quando = r.get("data")
         msg = r.get("mensagem") or {}
         txt_in = msg.get("text") if isinstance(msg, dict) else (msg or "")
@@ -123,8 +127,14 @@ def get_history_group(group_id: str, days: int = 14, limit: int = 300) -> List[D
 
     items: List[Dict[str, Any]] = []
     for r in reversed(rows):
+        if not isinstance(r, dict):
+            continue
         quando = r.get("data")
-        nome = (r.get("nome") or {}).get("display") or r.get("telefone") or "desconhecido"
+        nome_obj = r.get("nome")
+        if isinstance(nome_obj, dict):
+            nome = nome_obj.get("display") or r.get("telefone") or "desconhecido"
+        else:
+            nome = r.get("telefone") or "desconhecido"
         msg = r.get("mensagem") or {}
         txt_in = msg.get("text") if isinstance(msg, dict) else (msg or "")
         if txt_in:

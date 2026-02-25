@@ -10,11 +10,26 @@ Uso (PowerShell):
 """
 
 import os, sys, time, json, signal, subprocess, requests, threading
+import random
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
+
+# === Circuit Breaker e Rate Limit para Z-API ===
+_webhook_state = {
+    "last_url": None,
+    "last_update_ts": 0,
+    "fail_count": 0,
+    "circuit_open_until": 0,
+    "min_update_interval": 120,  # mínimo 2 min entre updates
+    "max_fails_before_open": 3,
+    "circuit_open_duration": 300  # 5 min de cooldown
+}
+import threading as _th
+_webhook_lock = _th.Lock()
 
 # ===== ENV =====
 HOST          = os.getenv("HOST", "0.0.0.0")
@@ -218,7 +233,7 @@ def wait_ngrok_url(timeout=60):
     while time.time() - t0 < timeout:
         try:
             r = requests.get(api, timeout=3)
-            if r.ok:
+            if r.ok:    
                 data = r.json()
                 for t in data.get("tunnels", []):
                     pub = t.get("public_url") or ""
@@ -229,23 +244,92 @@ def wait_ngrok_url(timeout=60):
         time.sleep(1)
     raise RuntimeError("Não consegui obter a URL pública do ngrok (porta 4040).")
 
-def set_zapi_webhook(public_base_url: str):
-    """Configura o webhook 'Ao receber' na Z-API para apontar ao seu endpoint."""
+def set_zapi_webhook(public_base_url: str, force: bool = False) -> bool:
+    """Configura o webhook 'Ao receber' na Z-API com circuit breaker e rate limit.
+    
+    Returns:
+        True se sucesso, False se falhou ou foi bloqueado
+    """
     if not (ZAPI_ID_INSTANCE and ZAPI_TOKEN):
         print("[zapi] PULEI: faltando ZAPI_ID_INSTANCE/ZAPI_TOKEN no .env")
-        return
+        return False
+    
     webhook = f"{public_base_url.rstrip('/')}{WEBHOOK_PATH}"
+    now = time.time()
+    
+    with _webhook_lock:
+        # Rate limit: não atualizar se URL não mudou e ainda no intervalo mínimo
+        if not force:
+            if webhook == _webhook_state["last_url"]:
+                elapsed = now - _webhook_state["last_update_ts"]
+                if elapsed < _webhook_state["min_update_interval"]:
+                    print(f"[zapi] PULEI: URL não mudou e ainda em cooldown ({int(elapsed)}s / {_webhook_state['min_update_interval']}s)")
+                    return True  # não é erro
+        
+        # Circuit breaker: se aberto, rejeitar
+        if now < _webhook_state["circuit_open_until"]:
+            remaining = int(_webhook_state["circuit_open_until"] - now)
+            print(f"[zapi] CIRCUIT ABERTO: aguardando {remaining}s antes de tentar novamente")
+            return False
+    
     url = f"{ZAPI_BASE}/instances/{ZAPI_ID_INSTANCE}/token/{ZAPI_TOKEN}/update-webhook-received"
     headers = {}
     if ZAPI_CLIENT:
         headers["Client-Token"] = ZAPI_CLIENT
-
     body = {"value": webhook}
-    r = requests.put(url, json=body, headers=headers, timeout=20)
-    if r.status_code >= 300:
-        raise RuntimeError(f"Falha ao configurar webhook na Z-API: {r.status_code} - {r.text}")
-
-    print(f"[zapi] Webhook RECEIVED atualizado para: {webhook}")
+    
+    # Retry com backoff exponencial + jitter
+    max_retries = 3
+    base_delay = 1
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"[zapi] Tentativa {attempt+1}/{max_retries} de atualizar webhook...")
+            r = requests.put(url, json=body, headers=headers, timeout=10)
+            
+            if r.status_code < 300:
+                with _webhook_lock:
+                    _webhook_state["last_url"] = webhook
+                    _webhook_state["last_update_ts"] = time.time()
+                    _webhook_state["fail_count"] = 0
+                    _webhook_state["circuit_open_until"] = 0
+                print(f"[zapi] ✓ Webhook atualizado: {webhook}")
+                return True
+            else:
+                print(f"[zapi] Erro HTTP {r.status_code}: {r.text[:200]}")
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"[zapi] Aguardando {delay:.1f}s antes de retentar...")
+                    time.sleep(delay)
+        
+        except requests.exceptions.Timeout as e:
+            print(f"[zapi] Timeout na tentativa {attempt+1}: {e}")
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(delay)
+        
+        except requests.exceptions.ConnectionError as e:
+            print(f"[zapi] Erro de conexão na tentativa {attempt+1}: {type(e).__name__}")
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(delay)
+        
+        except Exception as e:
+            print(f"[zapi] Erro inesperado na tentativa {attempt+1}: {type(e).__name__} - {e}")
+            if attempt < max_retries - 1:
+                time.sleep(base_delay)
+    
+    # Todas tentativas falharam
+    with _webhook_lock:
+        _webhook_state["fail_count"] += 1
+        print(f"[zapi] ✗ Falha após {max_retries} tentativas (total falhas: {_webhook_state['fail_count']})")
+        
+        # Abrir circuit breaker após N falhas
+        if _webhook_state["fail_count"] >= _webhook_state["max_fails_before_open"]:
+            _webhook_state["circuit_open_until"] = time.time() + _webhook_state["circuit_open_duration"]
+            print(f"[zapi] ⚠️ CIRCUIT BREAKER ABERTO por {_webhook_state['circuit_open_duration']}s após {_webhook_state['fail_count']} falhas")
+    
+    return False
 
     # (Opcional) também marcar "Notificar as enviadas por mim"
     # try:
@@ -255,31 +339,51 @@ def set_zapi_webhook(public_base_url: str):
     # except Exception as e:
     #     print("[zapi] Aviso ao atualizar DELIVERY:", e)
 
-def healthcheck():
-    """Retorna (ok_flask, ok_ngrok) para watchdog."""
+def healthcheck() -> tuple:
+    """Retorna (ok_flask, ok_tunnel, error_detail) para watchdog.
+    
+    error_detail é None se OK, ou string descrevendo o erro.
+    """
     ok_local = False
     ok_tunnel = False
+    error_detail = None
+    
+    # Check Flask local
     try:
-        r = requests.get(f"http://127.0.0.1:{PORT}/ping", timeout=3)
+        r = requests.get(f"http://127.0.0.1:{PORT}/ping", timeout=5)
         ok_local = r.status_code < 500
-    except Exception:
-        ok_local = False
-    # If PUBLIC_BASE_URL is set, verify the public /ping endpoint through the tunnel
+        if not ok_local:
+            error_detail = f"Flask /ping retornou {r.status_code}"
+    except requests.exceptions.Timeout:
+        error_detail = "Flask /ping timeout (5s)"
+    except requests.exceptions.ConnectionError as e:
+        error_detail = f"Flask ConnectionError: {type(e).__name__}"
+    except Exception as e:
+        error_detail = f"Flask erro: {type(e).__name__}"
+    
+    # Check tunnel (cloudflared ou ngrok)
     if PUBLIC_BASE_URL:
         try:
-            rr = requests.get(f"{PUBLIC_BASE_URL.rstrip('/')}/ping", timeout=5)
+            rr = requests.get(f"{PUBLIC_BASE_URL.rstrip('/')}/ping", timeout=8)
             ok_tunnel = rr.status_code < 500
-        except Exception:
-            ok_tunnel = False
+            if not ok_tunnel:
+                error_detail = (error_detail or "") + f" | Tunnel /ping retornou {rr.status_code}"
+        except requests.exceptions.Timeout:
+            error_detail = (error_detail or "") + " | Tunnel timeout (8s)"
+        except requests.exceptions.ConnectionError as e:
+            error_detail = (error_detail or "") + f" | Tunnel ConnectionError: {type(e).__name__}"
+        except Exception as e:
+            error_detail = (error_detail or "") + f" | Tunnel erro: {type(e).__name__}"
     else:
         try:
-            # If using ngrok local API, check it. Otherwise, we just assume tunnel process presence
             rr = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=3)
             ok_tunnel = rr.ok and "tunnels" in rr.json()
-        except Exception:
-            ok_tunnel = False
+            if not ok_tunnel:
+                error_detail = (error_detail or "") + " | ngrok API não responde ou inválido"
+        except Exception as e:
+            error_detail = (error_detail or "") + f" | ngrok API erro: {type(e).__name__}"
 
-    return ok_local, ok_tunnel
+    return ok_local, ok_tunnel, error_detail
 
 def print_dashboard_urls(public_url: str):
     print("\n=== URLs úteis ===")
@@ -415,15 +519,35 @@ def main():
     # keep references to cloudflared/ngrok process objects
     cloudflared_proc = globals().get('cloudflared_proc', None)
     last_ok_ts = time.time()
+    
+    # Watchdog cooldown para evitar restart storm
+    _restart_history = []  # lista de timestamps de restarts
+    _max_restarts_window = 5  # max 5 restarts em...
+    _restart_window_seconds = 300  # 5 minutos
+    _cooldown_after_max = 120  # aguarda 2 min após atingir limite
+    
     while True:
-        ok_flask, ok_tunnel = healthcheck()
+        ok_flask, ok_tunnel, error_detail = healthcheck()
 
         if ok_flask and ok_tunnel:
             last_ok_ts = time.time()
         else:
+            # Verificar se estamos em cooldown por excesso de restarts
+            now = time.time()
+            _restart_history = [ts for ts in _restart_history if now - ts < _restart_window_seconds]
+            
+            if len(_restart_history) >= _max_restarts_window:
+                print(f"[watchdog] COOLDOWN: {len(_restart_history)} restarts nos últimos {_restart_window_seconds}s. Aguardando {_cooldown_after_max}s...")
+                print(f"[watchdog] Erro detectado: {error_detail}")
+                time.sleep(_cooldown_after_max)
+                _restart_history.clear()
+                continue
+            
             # se ngrok caiu → reinicia ngrok e reconfigura webhook
             if not ok_tunnel:
-                print("[watchdog] Tunnel caiu. Reiniciando e atualizando webhook...")
+                print(f"[watchdog] Tunnel caiu ({error_detail}). Reiniciando e atualizando webhook...")
+                _restart_history.append(now)
+                
                 # Try restart cloudflared if PUBLIC_BASE_URL is set, else fall back to ngrok behavior
                 try:
                     if PUBLIC_BASE_URL:
@@ -447,11 +571,10 @@ def main():
                 except Exception as e:
                     print("[watchdog] Erro ao reiniciar tunnel:", e)
 
-                # try to update webhook (blocking here is acceptable for recovery)
-                try:
-                    set_zapi_webhook(public_url)
-                except Exception as e:
-                    print("[zapi] ERRO ao reconfigurar webhook:", e)
+                # try to update webhook (com circuit breaker já implementado)
+                webhook_ok = set_zapi_webhook(public_url)
+                if not webhook_ok:
+                    print("[watchdog] set_zapi_webhook falhou ou está em circuit breaker. Continuando watchdog.")
 
                 print_dashboard_urls(public_url)
                 try:
@@ -465,7 +588,9 @@ def main():
 
             # se flask caiu → reinicia app
             if not ok_flask:
-                print("[watchdog] Flask /ping falhou. Reiniciando app (main.py)...")
+                print(f"[watchdog] Flask /ping falhou ({error_detail}). Reiniciando app (main.py)...")
+                _restart_history.append(now)
+                
                 try: kill_proc(getattr(app_proc, 'pid', None))
                 except Exception: pass
                 app_proc = start_flask()
@@ -476,6 +601,7 @@ def main():
         # fallback: se ficar muito tempo sem ok (ex: 5min), reinicia flask por segurança
         if time.time() - last_ok_ts > 300:
             print("[fallback] 5 min sem OK. Reiniciando Flask preventivamente.")
+            _restart_history.append(time.time())
             try: kill_proc(getattr(app_proc, 'pid', None))
             except Exception: pass
             app_proc = start_flask()

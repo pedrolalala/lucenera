@@ -20,7 +20,8 @@ def _sb_insert(payload: dict) -> Optional[dict]:
     try:
         data = {k: v for k, v in payload.items() if v is not None}
         resp = supabase.table(TABLE).insert(data).execute()
-        return (resp.data or [None])[0]
+        result = (resp.data or [None])[0]
+        return result if isinstance(result, dict) else None
     except Exception as e:
         print(">> Supabase insert erro:", e)
         return None
@@ -33,7 +34,8 @@ def _sb_update(id_val, fields: dict) -> Optional[dict]:
         data = {k: v for k, v in fields.items() if v is not None}
         resp = supabase.table(TABLE).update(data).eq(ID_COLUMN, id_val).execute()
         if resp.data:
-            return resp.data[0]
+            result = resp.data[0]
+            return result if isinstance(result, dict) else None
     except Exception as e:
         print(f">> Supabase update erro (col={ID_COLUMN}):", e)
     return None

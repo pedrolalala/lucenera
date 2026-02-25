@@ -244,6 +244,11 @@ def is_internal_message(row_or_parsed: Dict[str, Any]) -> bool:
     if not isinstance(row_or_parsed, dict):
         return False
 
+    # Não marcar status@broadcast como interno
+    chat_phone = row_or_parsed.get("chat_phone") or row_or_parsed.get("telefone") or row_or_parsed.get("phone") or ""
+    if chat_phone == "status@broadcast":
+        return False
+
     tel = (
         row_or_parsed.get("telefone")
         or row_or_parsed.get("phone")
@@ -266,7 +271,6 @@ def is_internal_message(row_or_parsed: Dict[str, Any]) -> bool:
     if direction == "out":
         return True
 
-    chat_phone = row_or_parsed.get("chat_phone") or row_or_parsed.get("from")
     if _digits_only(chat_phone) in _INTERNAL_DIGITS:
         return True
 

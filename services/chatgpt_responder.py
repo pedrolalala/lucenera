@@ -164,16 +164,16 @@ def _build_short_reply(message: str, seed: str, reason: Optional[str] = None) ->
         variants = [
             f"{greeting}, Estou bem tambem, e por ai?",
             f"{greeting}, tudo otimo e com você?",
-            f"{greeting}, tudo certo por aqui, e contigo?",
+            f"{greeting}, tudo certo por aqui, e com você? Como posso te ajudar?",
             "Oi! Tudo certo por aqui",
-            "Tudo otimo, obrigada por perguntar :)",
+            "Tudo otimo, obrigada por perguntar, e com você?",
         ]
         reply = _select_variant(variants, seed)
         return _normalize_sentence_output(reply)
 
     if "envio" in normalized or "enviei" in normalized:
         variants = [
-            "Perfeito, vou acompanhar o envio e te retorno se faltar algo.",
+            "Perfeito, vou acompanhar o envio e te retorno assim que tiver alguma novidade.",
             "Recebido o envio, sigo monitorando por aqui.",
             "Ótimo, acompanho o envio e te aviso de qualquer pendência.",
         ]
@@ -198,7 +198,7 @@ def _build_short_reply(message: str, seed: str, reason: Optional[str] = None) ->
         return _normalize_sentence_output(reply)
     elif any(term in normalized for term in {"oi", "ola"}):
         variants = [
-            "Tudo certo por aqui, obrigada por chamar.",
+            "Tudo certo por aqui, se precisar de algo, me avise.",
             "Oi! Estou acompanhando e te sinalizo se aparecer novidade.",
         ]
     else:
@@ -224,11 +224,12 @@ Você é a Julia, assistente de projetos da Lucenera — Atelier da Luz.
 - Nunca diga que é IA, sistema, robô ou automação.
 - Fale como uma profissional experiente, consultiva e direta.
 - Responda em até duas frases curtas (três apenas se precisar indicar próximo passo).
-- Não use frases genéricas como "entendi", "ok", "certo", "recebido", "fico no aguardo", "qualquer coisa é só chamar".
- - Sempre inicie a mensagem final com "**Julia:** " seguido do texto, sem emojis e sem ponto de exclamação.
+- Não use frases genéricas como  "qualquer coisa é só chamar".
+- Sempre inicie a mensagem final com "**Julia:** " seguido do texto, sem emojis e sem ponto de exclamação.
 - Reformule a mensagem do cliente com naturalidade e não a repita literalmente.
 - Se faltar informação essencial, faça apenas uma pergunta objetiva.
-- Se a mensagem for apenas confirmação/agradecimento, responda com "[SEM RESPOSTA NECESSÁRIA]".
+- PRIORIDADE MÁXIMA: Se há conteúdo de negócios (projetos, financeiro, entrega, orçamento, cadastro, aprovação), 
+  SEMPRE foque nesse contexto, independente de cumprimentos ou verificações de estado presentes na conversa.
 """.strip()
 
 _ORCHESTRATION_GUIDANCE = (
@@ -236,9 +237,11 @@ _ORCHESTRATION_GUIDANCE = (
     "pelo backend em Python. Reescreva a resposta final com clareza humana, priorizando o conteúdo real da "
     "mensagem e do histórico para definir tom e foco. Trate a resposta sugerida apenas como ponto de partida "
     "opcional; se ela estiver fora de contexto ou incompleta, construa uma nova resposta coerente. Evite "
-    "respostas genéricas como 'ok', 'entendi' ou 'certo'. Se a mensagem for apenas agradecimento, confirmação "
-    "ou saudação sem nova demanda, retorne exatamente '[SEM RESPOSTA NECESSÁRIA]'. Quando a mensagem do cliente for "
-    "muito curta ou informal, responda de modo acolhedor reconhecendo o contato e não prometa alinhar com a equipe "
+    "respostas genéricas como 'ok', 'entendi' ou 'certo'. IMPORTANTE: Se a conversa "
+    "contém informações de negócios, projetos, financeiro, entrega ou qualquer conteúdo técnico, SEMPRE priorize "
+    "esse contexto sobre cumprimentos ou verificações de estado. Não responda com cumprimentos genéricos quando "
+    "há conteúdo substancial de trabalho sendo discutido. Quando a mensagem do cliente for muito curta ou informal "
+    "E sem contexto de negócios, responda de modo acolhedor reconhecendo o contato e não prometa alinhar com a equipe "
     "sem necessidade explícita."
 )
 
@@ -480,7 +483,7 @@ _ACTION_HANDOFFS: Dict[str, List[str]] = {
         "me avisa se quiser ajustar algo.",
         "estou por aqui para o que precisar.",
         "qualquer novidade te sinalizo por aqui.",
-        "sigo acompanhando e te mantenho no loop.",
+        "vou te manter informado sobre o andamento.",
     ],
     "contato_direto": [
         "vou checar se alguém pode te retornar por ligação.",
@@ -636,6 +639,16 @@ def _classify_short_message(message: str) -> Optional[str]:
         return None
     if _looks_like_personal_check(normalized):
         return "personal_check"
+    
+    # Detectar confirmações específicas
+    confirmation_keywords = {"sim", "compreendo", "entendo", "entendi", "certo", "correto", "perfeito", "combinado", "certeza", "exato", "ótimo", "otimo", "maravilha", "beleza", "tranquilo", "ok"}
+    confirmation_phrases = ["está ótimo", "esta ótimo", "está bom", "esta bom", "tudo certo", "tá bom", "ta bom", "está perfeito", "esta perfeito"]
+    
+    if any(word in normalized for word in confirmation_keywords):
+        return "confirmation"
+    if any(phrase in normalized for phrase in confirmation_phrases):
+        return "confirmation"
+    
     if any(term in normalized for term in _REQUEST_KEYWORDS):
         return None
     for keywords in _ACTION_KEYWORDS.values():
@@ -688,6 +701,19 @@ def _classify_short_message(message: str) -> Optional[str]:
         "duvidas",
         "tranquilo",
         "tranquila",
+        "compreendo",
+        "entendo",
+        "entendi",
+        "certo",
+        "correto",
+        "combinado",
+        "certeza",
+        "exato",
+        "otimo",
+        "maravilha",
+        "beleza",
+        "esta",
+        "ta",
     }
     match_type: Optional[str] = None
     if _is_passive_ack(message):
@@ -705,6 +731,21 @@ def _classify_short_message(message: str) -> Optional[str]:
     return None
 
 
+# Palavras-chave que indicam conteúdo de trabalho/projeto (não é apenas cumprimento)
+_PROJECT_WORK_KEYWORDS = {
+    "material", "telas", "projeto", "obra", "instalacao", "instalação", "entrega", "prazo",
+    "orcamento", "orçamento", "valor", "preco", "preço", "pagamento", "financeiro",
+    "estoque", "produto", "peca", "peça", "luminaria", "luminária", "spot", "led",
+    "driver", "pendente", "lampada", "lâmpada", "interruptor", "dimmer", "sensor",
+    "reuniao", "reunião", "agenda", "visita", "medicao", "medição", "aprovacao", "aprovação",
+    "alteracao", "alteração", "mudanca", "mudança", "cronograma", "planejamento",
+    "alexandre", "roberta", "thais", "helena", "murillo", "julia", "vinicius", "matheus",
+    "organizar", "coordenar", "alinhar", "combinar", "definir", "decidir", "resolver",
+    "pendencia", "pendência", "problema", "duvida", "dúvida", "questao", "questão",
+    "status", "andamento", "progresso", "atualização", "atualizacao", "retorno",
+    "confirmar", "verificar", "checar", "consultar", "informar", "avisar"
+}
+
 _PERSONAL_CHECK_PATTERNS = [
     re.compile(r"\b(tudo|td)\s+bem(?:\s+com\s+(?:voce|vc|ca|ce))?\b", re.IGNORECASE),
     re.compile(r"\bcomo\s+(?:voce|vc|ca|ce)\s+(?:esta|ta|vai)\b", re.IGNORECASE),
@@ -717,13 +758,33 @@ _PERSONAL_CHECK_PATTERNS = [
 def _looks_like_personal_check(normalized: str) -> bool:
     if not normalized:
         return False
+    
+    # Verificar se há palavras-chave de projeto/trabalho
+    # Se houver, não é apenas um cumprimento pessoal
+    # Exceção: "julia" pode aparecer em cumprimentos diretos ao bot
+    work_keywords_found = [keyword for keyword in _PROJECT_WORK_KEYWORDS if keyword in normalized]
+    if work_keywords_found:
+        # Se só tem "julia" e é claramente um cumprimento, permitir
+        if work_keywords_found == ["julia"] and any(greeting in normalized for greeting in ["oi julia", "ola julia", "bom dia julia", "boa tarde julia", "boa noite julia"]):
+            pass  # Continuar verificação de cumprimento
+        else:
+            return False
+    
+    # Verificar padrões de cumprimento apenas se não há conteúdo de trabalho
     for pattern in _PERSONAL_CHECK_PATTERNS:
         if pattern.search(normalized):
             return True
     if "tudo bem" in normalized and "?" in normalized:
         return True
-    if normalized.startswith(("bom dia", "boa tarde", "boa noite")) and "tudo bem" in normalized:
+    if normalized.startswith(("bom dia", "boa tarde", "boa noite")) and ("tudo bem" in normalized or "como vai" in normalized or "como voce" in normalized):
         return True
+    
+    # Verificar se é uma mensagem muito curta e parece ser só cumprimento
+    words = normalized.split()
+    if len(words) <= 6 and any(greeting in normalized for greeting in {"oi", "ola", "bom dia", "boa tarde", "boa noite"}):
+        if any(check in normalized for check in {"tudo bem", "como vai", "como voce", "como esta", "como ta"}):
+            return True
+    
     return False
 
 
@@ -1292,7 +1353,7 @@ def _gerar_resposta_impl(
     # --- FIM PATCH: Priorizar interpretação de mídia ---
 
     short_reason = _classify_short_message(mensagem)
-    if short_reason:
+    if short_reason and short_reason != "confirmation":
         short_reply = _build_short_reply(mensagem, f"{uid}:{mensagem}:short", short_reason)
         LOGGER.info(
             "Resposta curta gerada por heuristica para user_id=%s (motivo=%s)",
